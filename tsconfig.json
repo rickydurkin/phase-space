@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.app.json",
+  "include": ["src/**/*.ts", "tools/**/*.ts", "tests/**/*.ts", "*.config.ts"],
+  "compilerOptions": {
+    "types": ["@webgpu/types", "vite/client", "node"]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["node", "@webgpu/types"]
+  },
+  "include": ["tools/**/*.ts", "tests/**/*.ts", "src/sim/**/*.ts", "*.config.ts"]
+}
