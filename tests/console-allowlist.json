@@ -1,0 +1,4 @@
+{
+  "_comment": "Console warnings allowed in automated runs (MASTER 2.9). Errors are never allowed. Each entry needs a reason.",
+  "warnings": []
+}

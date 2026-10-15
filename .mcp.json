@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@0.0.83",
+        "--browser", "chromium",
+        "--headless",
+        "--ignore-https-errors"
+      ],
+      "env": {
+        "PLAYWRIGHT_CHROMIUM_ARGS": "--enable-unsafe-webgpu --enable-features=Vulkan --use-angle=vulkan --use-vulkan=swiftshader --use-webgpu-adapter=swiftshader"
+      }
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@1.10.1"]
+    }
+  }
+}

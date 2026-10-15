@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>PHASE SPACE replay harness</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #1b1d22;
+        color: #e6e6e6;
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: 13px;
+      }
+      main {
+        padding: 16px;
+        max-width: 720px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: #b8c4d0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 style="font-size: 15px; margin: 0 0 8px">PHASE SPACE replay harness</h1>
+      <p id="status">loading simulation...</p>
+      <pre id="log"></pre>
+    </main>
+    <script type="module" src="./src/app/replay-page.ts"></script>
+  </body>
+</html>

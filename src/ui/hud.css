@@ -1,0 +1,84 @@
+/* PHASE SPACE HUD (P00 stub). Plain DOM, top-left, pointer events pass through. */
+
+.ps-hud {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  min-width: 260px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(16, 18, 22, 0.72);
+  color: #e6e6e6;
+  font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.ps-hud .ps-title {
+  margin-bottom: 4px;
+  letter-spacing: 0.08em;
+  color: #9fb3c8;
+}
+
+.ps-hud .ps-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ps-hud .ps-k {
+  color: #8a94a0;
+}
+
+.ps-hud .ps-v {
+  color: #e6e6e6;
+  font-variant-numeric: tabular-nums;
+}
+
+.ps-hud .ps-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #b5452b;
+  color: #fff;
+}
+
+.ps-hud .ps-badge[hidden] {
+  display: none;
+}
+
+.ps-hud .ps-replay {
+  margin-top: 6px;
+  color: #c9d1d9;
+}
+
+.ps-hud .ps-replay[data-state='ok'] {
+  color: #7fd18b;
+}
+
+.ps-hud .ps-replay[data-state='bad'] {
+  color: #ff6b57;
+}
+
+.ps-hud .ps-replay[data-state='busy'] {
+  color: #e2c46a;
+}
+
+.ps-hud .ps-note {
+  margin-top: 6px;
+  color: #e2c46a;
+}
+
+.ps-hud .ps-note:empty {
+  display: none;
+}
+
+.ps-hud .ps-help {
+  margin-top: 6px;
+  color: #6f7985;
+}

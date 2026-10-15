@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-15T21:44:20.038Z",
+  "node": "v26.8.2",
+  "results": [
+    {
+      "bodies": 300,
+      "hz": 120,
+      "msPerSimSecond": 187
+    },
+    {
+      "bodies": 300,
+      "hz": 240,
+      "msPerSimSecond": 339
+    },
+    {
+      "bodies": 300,
+      "hz": 480,
+      "msPerSimSecond": 509
+    },
+    {
+      "bodies": 300,
+      "hz": 960,
+      "msPerSimSecond": 1214
+    },
+    {
+      "hz": 480,
+      "affordableBodiesWithinBudget": 100,
+      "budgetMsPerSimSecond": 300
+    },
+    {
+      "hz": 960,
+      "affordableBodiesWithinBudget": 50,
+      "budgetMsPerSimSecond": 300
+    }
+  ]
+}

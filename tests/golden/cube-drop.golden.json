@@ -1,0 +1,97 @@
+{
+  "format": 1,
+  "gameVersion": "0.0.0",
+  "physicsVersion": "0.1.0",
+  "scene": {
+    "id": "cube-drop",
+    "version": 1
+  },
+  "seed": 1,
+  "dt": 0.008333333333333333,
+  "mechanicsSubsteps": 2,
+  "ticks": 1200,
+  "inputs": [],
+  "hashEvery": 60,
+  "hashes": [
+    {
+      "tick": 60,
+      "hash": "640b64ff055e3d7f"
+    },
+    {
+      "tick": 120,
+      "hash": "011071d62694792d"
+    },
+    {
+      "tick": 180,
+      "hash": "e46d372d94379011"
+    },
+    {
+      "tick": 240,
+      "hash": "3ff208932f4aa94f"
+    },
+    {
+      "tick": 300,
+      "hash": "c9c97c5c753b3917"
+    },
+    {
+      "tick": 360,
+      "hash": "2c617d973d0c099f"
+    },
+    {
+      "tick": 420,
+      "hash": "7565368519a4b527"
+    },
+    {
+      "tick": 480,
+      "hash": "7de14a9a5a13ccff"
+    },
+    {
+      "tick": 540,
+      "hash": "19fb2b230f3c1c3b"
+    },
+    {
+      "tick": 600,
+      "hash": "880927a2f03439b3"
+    },
+    {
+      "tick": 660,
+      "hash": "7f2e1ad2fa8ceccb"
+    },
+    {
+      "tick": 720,
+      "hash": "72ed808e5fa250f3"
+    },
+    {
+      "tick": 780,
+      "hash": "c153284cf964771b"
+    },
+    {
+      "tick": 840,
+      "hash": "52680e381f24d33b"
+    },
+    {
+      "tick": 900,
+      "hash": "8f7828cc70f2dfab"
+    },
+    {
+      "tick": 960,
+      "hash": "7286f1b43df910ab"
+    },
+    {
+      "tick": 1020,
+      "hash": "679fc49718c86d9b"
+    },
+    {
+      "tick": 1080,
+      "hash": "b982aff433af71d7"
+    },
+    {
+      "tick": 1140,
+      "hash": "febea92f0049340f"
+    },
+    {
+      "tick": 1200,
+      "hash": "3374e5261804bf27"
+    }
+  ]
+}

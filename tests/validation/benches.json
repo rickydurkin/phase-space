@@ -1,0 +1,12 @@
+{
+  "_comment": "Frozen bench parameters (MASTER 6). Changing a value needs Ricky's approval recorded in docs/PROGRESS.md.",
+  "M1": {
+    "name": "free fall",
+    "scene": "free-fall",
+    "seed": 1,
+    "y0": 100,
+    "t": 2.0,
+    "g": 9.80665,
+    "tolerance": 0.005
+  }
+}

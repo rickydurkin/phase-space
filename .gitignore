@@ -8,4 +8,7 @@ blob-report/
 .vite/
 *.log
 .DS_Store
-reports/tmp/
+reports/*
+!reports/spike-*.json
+!reports/perf-mac.json
+!reports/engines.json

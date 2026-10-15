@@ -1,8 +1,21 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2023"],
-    "types": ["node", "@webgpu/types"]
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "node",
+      "@webgpu/types",
+      "vite/client"
+    ]
   },
-  "include": ["tools/**/*.ts", "tests/**/*.ts", "src/sim/**/*.ts", "*.config.ts"]
+  "include": [
+    "tools/**/*.ts",
+    "tests/**/*.ts",
+    "src/**/*.ts",
+    "*.config.ts"
+  ]
 }

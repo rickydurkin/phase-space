@@ -1,0 +1,20 @@
+// Public surface of the Authoritative Simulation.
+export { Simulation, DEFAULT_DT, DEFAULT_MECHANICS_SUBSTEPS } from './core/simulation.ts';
+export type { SimulationInfo, SimulationOptions } from './core/simulation.ts';
+export { World, Pose, Velocity, RigidBody } from './core/world.ts';
+export type { EntityId } from './core/world.ts';
+export { FrameClock } from './core/clock.ts';
+export type { ClockStep } from './core/clock.ts';
+export { EnergyLedger } from './core/ledger.ts';
+export { Fnv1a64, fnv1a64Hex } from './core/hash.ts';
+export { Rng, RngStream } from './rng/index.ts';
+export { CONSTANTS } from './core/constants.ts';
+export * as dmath from './dmath/index.ts';
+export { SCENES, getScene, cubeDrop, freeFall, randomDropScene, stackScene } from './scenes/index.ts';
+export type { SceneDef, BodyDef } from './scenes/types.ts';
+export { runScene, runReplay, makeReplay, firstDivergence } from './core/replay.ts';
+export type { ReplayFile, ReplayResult, HashSample } from './core/replay.ts';
+export type { InputCommand, DomainModule, ModelCard, BenchResult } from './core/types.ts';
+export type { Observation } from './core/observe.ts';
+export { PHYSICS_VERSION, REPLAY_FORMAT } from './version.ts';
+export { initRapier, MECHANICS_MODEL_CARD } from './domains/mechanics/rapier.ts';

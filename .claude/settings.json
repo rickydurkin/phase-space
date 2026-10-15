@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [{ "type": "command", "command": "node tools/hooks/post-edit.js", "timeout": 120 }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "node tools/hooks/stop.js", "timeout": 600 }]
+      }
+    ]
+  }
+}

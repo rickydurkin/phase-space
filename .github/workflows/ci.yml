@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'wip/**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify, validation, golden, gpu, missions, e2e, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: System packages for Dawn (llvmpipe Vulkan) and Playwright
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-vulkan-drivers
+          npx playwright install --with-deps chromium webkit firefox
+      - run: npm run verify:fast
+      - run: npm run test:validation
+      - run: npm run test:golden
+      - run: npm run test:gpu
+      - run: npm run missions:verify
+      - run: npm run test:e2e
+      - run: npm run build
+      - run: npm run size:check
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ github.sha }}
+          path: |
+            reports/
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore

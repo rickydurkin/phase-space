@@ -1,0 +1,26 @@
+{
+  "chromium": {
+    "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+    "webgpu": true,
+    "cubeDropFinal": "3374e5261804bf27",
+    "matchesGolden": true,
+    "date": "2026-10-15T22:01:05.701Z"
+  },
+  "chromium:stack-1000": {
+    "nodeHash": "cd30206c8caedd4e",
+    "browserHash": "cd30206c8caedd4e",
+    "date": "2026-10-15T22:01:09.061Z"
+  },
+  "webkit": {
+    "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+    "webgpu": true,
+    "cubeDropFinal": "3374e5261804bf27",
+    "matchesGolden": true,
+    "date": "2026-10-15T22:01:49.556Z"
+  },
+  "webkit:stack-1000": {
+    "nodeHash": "cd30206c8caedd4e",
+    "browserHash": "cd30206c8caedd4e",
+    "date": "2026-10-15T22:01:52.438Z"
+  }
+}

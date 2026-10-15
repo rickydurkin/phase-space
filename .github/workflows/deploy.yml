@@ -1,0 +1,41 @@
+# Deploys main to GitHub Pages after a green CI run, and only once Ricky has
+# approved publishing by setting the repository variable DEPLOY_APPROVED to
+# "true" (MASTER 3.5: nothing is published without his word).
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && vars.DEPLOY_APPROVED == 'true' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

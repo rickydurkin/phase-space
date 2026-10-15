@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-15T21:44:13.612Z",
+  "bodies": 1000,
+  "ticks": 600,
+  "tick": 0.008333333333333333,
+  "substeps": 2,
+  "stepMs": {
+    "p50": 4.420000000000073,
+    "p95": 22.854334000000108,
+    "p99": 42.21004199999993,
+    "max": 112.55791699999963,
+    "meanPerSimulatedSecond": 911.0792781999993
+  },
+  "sleepingAtEnd": 1000,
+  "snapshotBytes": 1962378,
+  "snapshotBytesPerBody": 1962.378,
+  "saveMs": 19.256915999999364,
+  "restoreMs": 41.12770900000032,
+  "restoreHashMatchesAt600": true,
+  "hashAfter": "2d3452bfb6fc5782",
+  "hashRestoredPlus600": "64b245ee6c7b9eea",
+  "hashDirectPlus600": "64b245ee6c7b9eea",
+  "node": "v26.8.2",
+  "platform": "darwin arm64"
+}

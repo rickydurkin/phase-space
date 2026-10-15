@@ -1,0 +1,57 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  long-checks:
+    name: full missions, dmath million samples, long fuzz, soak, visual
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-vulkan-drivers
+          npx playwright install --with-deps chromium webkit firefox
+      - run: npm run verify:fast
+      - run: npm run missions:verify -- --all
+      - run: npm run test:dmath:full
+      - run: FUZZ_RUNS=500 npm run test:fuzz
+      - run: npm run test:visual
+      - run: npm run test:soak
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-${{ github.run_id }}
+          path: |
+            reports/
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+
+  golden-cross-platform:
+    name: golden replays on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium webkit firefox
+      - run: npm run test:golden

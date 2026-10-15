@@ -1,0 +1,121 @@
+{
+  "date": "2026-10-15T21:44:22.901Z",
+  "node": "v26.8.2",
+  "samples": 1000000,
+  "rows": [
+    {
+      "sin": 0,
+      "dmathNs": 55,
+      "mathNs": 42,
+      "ratio": 1.3
+    },
+    {
+      "cos": 0,
+      "dmathNs": 59,
+      "mathNs": 42,
+      "ratio": 1.4
+    },
+    {
+      "tan": 0,
+      "dmathNs": 52,
+      "mathNs": 33,
+      "ratio": 1.59
+    },
+    {
+      "exp": 0,
+      "dmathNs": 27,
+      "mathNs": 16,
+      "ratio": 1.65
+    },
+    {
+      "expm1": 0,
+      "dmathNs": 32,
+      "mathNs": 32,
+      "ratio": 1
+    },
+    {
+      "log": 0,
+      "dmathNs": 22,
+      "mathNs": 17,
+      "ratio": 1.32
+    },
+    {
+      "log1p": 0,
+      "dmathNs": 27,
+      "mathNs": 16,
+      "ratio": 1.66
+    },
+    {
+      "log2": 0,
+      "dmathNs": 20,
+      "mathNs": 15,
+      "ratio": 1.33
+    },
+    {
+      "log10": 0,
+      "dmathNs": 23,
+      "mathNs": 29,
+      "ratio": 0.78
+    },
+    {
+      "atan": 0,
+      "dmathNs": 29,
+      "mathNs": 21,
+      "ratio": 1.39
+    },
+    {
+      "asin": 0,
+      "dmathNs": 39,
+      "mathNs": 28,
+      "ratio": 1.37
+    },
+    {
+      "acos": 0,
+      "dmathNs": 39,
+      "mathNs": 31,
+      "ratio": 1.24
+    },
+    {
+      "sinh": 0,
+      "dmathNs": 53,
+      "mathNs": 28,
+      "ratio": 1.9
+    },
+    {
+      "cosh": 0,
+      "dmathNs": 48,
+      "mathNs": 25,
+      "ratio": 1.95
+    },
+    {
+      "tanh": 0,
+      "dmathNs": 56,
+      "mathNs": 31,
+      "ratio": 1.82
+    },
+    {
+      "cbrt": 0,
+      "dmathNs": 51,
+      "mathNs": 19,
+      "ratio": 2.71
+    },
+    {
+      "pow": 0,
+      "dmathNs": 117,
+      "mathNs": 20,
+      "ratio": 5.89
+    },
+    {
+      "atan2": 0,
+      "dmathNs": 45,
+      "mathNs": 28,
+      "ratio": 1.61
+    },
+    {
+      "hypot": 0,
+      "dmathNs": 32,
+      "mathNs": 18,
+      "ratio": 1.81
+    }
+  ]
+}
