@@ -9,6 +9,7 @@ export default tseslint.config(
     ignores: [
       'dist/**',
       'dist-test/**',
+      'dist-spike-*/**',
       'node_modules/**',
       'programme/**',
       'reports/**',
@@ -44,7 +45,13 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser } },
   },
   {
+    // Browser-side spike pages
+    files: ['tools/spikes/*/**/*.js'],
+    languageOptions: { globals: { ...globals.browser } },
+  },
+  {
     files: ['tools/**/*.{ts,js,mjs}', 'tests/**/*.ts', '*.config.{ts,js,mjs}', '.dependency-cruiser.cjs'],
+    ignores: ['tools/spikes/*/**/*.js'],
     languageOptions: { globals: { ...globals.node } },
     rules: { 'no-console': 'off' },
   },
