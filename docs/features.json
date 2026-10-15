@@ -256,8 +256,8 @@
         "perf-mac tool",
         "gate tool"
       ],
-      "passes": false,
-      "evidence": null
+      "passes": true,
+      "evidence": "npm run gate P00 on 16/10/2026 (commit 5b634ab): 18 of 18 items pass in 34 minutes; test:visual 2 passed with per-adapter baselines (tests/visual/baselines/*-darwin-gpu.json); test:soak 5 minutes, 235 random actions, JS heap 5.6 to 5.9 MB, console clean; perf:mac wrote docs/BASELINE.md (120 Hz vsync-bound, stack-1000 AS 168 ms per simulated second); docs/phases/P00-report.md written with caveats."
     },
     {
       "id": "P00-018",

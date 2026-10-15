@@ -3,7 +3,7 @@
 Phase: P00
 Programme version: 1.0.0
 Physics version: 0.1.0
-Last updated: 15/10/2026 (end of session 1)
+Last updated: 16/10/2026 (end of session 1)
 
 ## Setup answers (P00 planning questions)
 
@@ -15,7 +15,7 @@ Ricky was not available during session 1, so these are working assumptions, each
 
 ## Current state (session 1)
 
-P00 is built end to end and 18 of 22 features in docs/features.json pass with evidence. The deterministic core, Rapier mechanics, dmath, the golden harness, the browser app (WebGPU with WebGL2 fallback, worker, HUD, replay) and every command in MASTER 13.1 exist and run. The gate report is docs/phases/P00-report.md (written by `npm run gate P00`).
+P00 is built end to end; 21 of 22 features in docs/features.json pass with evidence (P00-011 waits for Firefox in CI). `npm run gate P00` passes 18 of 18 automated items (commit 5b634ab, 16/10/2026) with the caveats listed in the report. The deterministic core, Rapier mechanics, dmath, the golden harness, the browser app (WebGPU with WebGL2 fallback, worker, HUD, replay) and every command in MASTER 13.1 exist and run. The gate report is docs/phases/P00-report.md.
 
 Known gaps, all recorded in the report:
 
@@ -41,7 +41,7 @@ Known gaps, all recorded in the report:
 
 ## Session log
 
-### Session 1, 15/10/2026
+### Session 1, 15/10/2026 to 16/10/2026
 
 - Bootstrap: repository initialised, programme/ copied in, package.json, PROGRESS.md and P00-plan.md (commit 7c9b1d2).
 - Toolchain: TypeScript 6.0.3 (three tsconfigs; src/sim without DOM), ESLint 10 with tools/eslint/plugin-sim.js, dependency-cruiser, Vitest 5 projects, Playwright 1.64.1, Dawn (webgpu 0.6.2), content lint, count check, verify:fast under 90 s (ADR 0001).
@@ -50,4 +50,5 @@ Known gaps, all recorded in the report:
 - Presentation (subagent): Vite app, WebGPURenderer with WebGL2 fallback, AS worker with transferable frames and interpolation, orbit camera for trackpads, HUD, error overlay, replay page, window.__ps test API.
 - Spikes S1 to S6 measured (ADRs 0004 to 0009); perf:mac baseline written (docs/BASELINE.md).
 - CI workflows, Claude Code setup (CLAUDE.md, rules, hooks with proof, agents, skills, .mcp.json), docs (SCHEDULE.md, model card, PHYSICS-CHANGELOG, DEFECTS, LEARNINGS, IDEAS, research refresh).
-- Lessons of the day are in docs/LEARNINGS.md (13 entries).
+- First full gate run found four defects in the harness and fixed them (fuzz floor-edge invariant with a frozen seed, Rapier bundled twice, CI variable handling, D-001); final gate 18 of 18.
+- Lessons of the session are in docs/LEARNINGS.md (14 entries).

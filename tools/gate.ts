@@ -48,6 +48,8 @@ const P00: Item[] = [
   { id: 'G17', gate: 'perf:mac baseline recorded in docs/BASELINE.md', cmd: null, evidence: () => (existsSync('reports/perf-mac.json') ? readFileSync('docs/BASELINE.md', 'utf8').split('\n').filter((l) => l.startsWith('| cube-drop') || l.startsWith('| stack')).join(' ') : 'not measured') },
 ];
 
+const P00_CAVEATS = "## Caveats on the automated result\n\nThe table above is what the commands could prove on Ricky's Mac on 16/10/2026. Four items carry conditions that only the first CI run or Ricky can close:\n\n- G2b: Chromium (V8) and WebKit (JavaScriptCore) reproduce every golden hash. Firefox (SpiderMonkey) did not run: Playwright's Firefox build does not start on this macOS (ADR 0009). The CI workflow runs it on Linux.\n- G6: the end-to-end suite ran on the real GPU through full Chromium in new headless mode, because every SwiftShader configuration on macOS loses the WebGPU device at the first canvas present (ADR 0009). The 30 s SwiftShader boot budget is therefore a CI (Linux) measurement, pending the first CI run; the real-GPU boot was 251 to 1,242 ms.\n- G14: the workflows exist and are reviewed, but CI has never run because the repository has no remote (Q1 and Q2 in docs/PROGRESS.md).\n- G15: the hooks are proven by direct invocation; their behaviour inside a live Claude Code CLI session is not yet observed.\n\nPartial spike: S2 measured 1,000 individually meshed bodies at the display's 120 Hz, not 10,000 instanced bodies with post-processing (ADR 0007); the full measurement is P1 work. Defect D-001 (an unhandled rejection from three.js during a deliberate GPU-process crash) is open and tolerated only inside that test.";
+
 const items = phase === 'P00' ? P00 : [];
 if (items.length === 0) {
   console.error(`no gate definition for ${phase} yet`);
@@ -105,6 +107,7 @@ const lines = [
   '|---|---|---|---|',
   ...rows.map((r) => `| ${r.id} | ${r.gate} | ${r.result} | ${r.evidence} |`),
   '',
+  ...(phase === 'P00' ? [P00_CAVEATS, ''] : []),
   '## Benches',
   '',
   '| id | expected | measured | error | pass |',
