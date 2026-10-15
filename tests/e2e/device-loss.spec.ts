@@ -52,6 +52,7 @@ test('GPU process crash through the DevTools protocol does not break the page', 
   const after = await page.evaluate(() => (window.__ps as TestApi).getState());
   expect(after.hash).toBe(before.hash);
   expect(await page.evaluate(() => (window.__ps as TestApi).errors())).toEqual([]);
-  // Chromium itself reports the instance loss when its GPU process is killed on purpose here.
-  expectCleanConsole(c, [/A valid external Instance reference no longer exists/]);
+  // Chromium itself reports the instance loss when its GPU process is killed on purpose here, and
+  // three.js's pending popErrorScope promise rejects unhandled (docs/DEFECTS.md D-001).
+  expectCleanConsole(c, [/A valid external Instance reference no longer exists/], [/Instance dropped in popErrorScope/]);
 });

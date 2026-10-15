@@ -15,8 +15,11 @@ function assertFinite(sim: Simulation): void {
     if (sim.world.has(id, Velocity)) {
       for (const f of Velocity.fields) expect(Number.isFinite(vel.field(f)[id] as number), `${f} of ${id}`).toBe(true);
     }
-    // nothing fell through the 1 m thick floor (top at y = 0) by more than tolerance
-    expect(pose.field('py')[id] as number).toBeGreaterThan(-1.5);
+    // Nothing over the floor (half extents 20 m, top at y = 0, 1 m thick) fell through it.
+    // A body that rolled off the edge is free to fall (fast-check found seed 1852623524:
+    // a heavy ball with restitution 0.7 left the floor at x = 22 m).
+    const onFloor = Math.abs(pose.field('px')[id] as number) < 19 && Math.abs(pose.field('pz')[id] as number) < 19;
+    if (onFloor) expect(pose.field('py')[id] as number, `entity ${id} fell through the floor`).toBeGreaterThan(-1.5);
   }
 }
 
@@ -40,5 +43,17 @@ describe('scene fuzzing', () => {
       }),
       { numRuns: RUNS, verbose: true },
     );
+  });
+
+  it('frozen counterexample 1852623524: a ball rolls off the floor edge and falls, which is allowed', async () => {
+    const seed = 1852623524;
+    const scene = randomDropScene(seed);
+    const sim = await Simulation.create(scene, { seed });
+    sim.advance(TICKS);
+    const pose = sim.world.store(Pose);
+    const ball = sim.named.get('body-9') as number;
+    expect(Math.abs(pose.field('px')[ball] as number)).toBeGreaterThan(20);
+    expect(pose.field('py')[ball] as number).toBeLessThan(-1.5);
+    assertFinite(sim);
   });
 });

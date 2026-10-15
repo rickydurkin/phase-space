@@ -70,7 +70,7 @@ for (const it of items) {
   }
   console.log(`run  ${it.id} ${it.cmd.join(' ')}`);
   const t0 = performance.now();
-  const r = spawnSync(it.cmd[0] as string, it.cmd.slice(1), { encoding: 'utf8', env: { ...process.env, ...it.env, FORCE_COLOR: '0', CI: process.env['CI'] ?? '' }, maxBuffer: 64 * 1024 * 1024 });
+  const r = spawnSync(it.cmd[0] as string, it.cmd.slice(1), { encoding: 'utf8', env: { ...process.env, ...it.env, FORCE_COLOR: '0' }, maxBuffer: 64 * 1024 * 1024 });
   const out = `${r.stdout ?? ''}${r.stderr ?? ''}`;
   const ok = (r.status ?? 1) === 0;
   const seconds = (performance.now() - t0) / 1000;

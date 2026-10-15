@@ -29,8 +29,8 @@
         "Port sin cos tan exp expm1 log log1p log2 log10 pow atan atan2 asin acos sinh cosh tanh cbrt hypot",
         "Million-sample reference test per function"
       ],
-      "passes": false,
-      "evidence": null
+      "passes": true,
+      "evidence": "npm run test:dmath:full 15/10/2026 (a million samples per function against 40-digit references built exactly from the double bits): 18 of 19 passed first time (worst atan2 1.43 ulp, sin 0.83, tan 0.85, acos 0.89, asin 0.85, log 0.78, log10 0.58, log2 0.54); tanh reached 2.04 ulp on 3 samples, fixed by a Taylor series below |x| = 0.2554 and musl's split above (ADR 0006): re-run 1,000,000 samples maxUlp 1.348, over2 0. The gate run re-executes the whole project (docs/phases/P00-report.md, G4)."
     },
     {
       "id": "P00-003",

@@ -33,8 +33,10 @@ export function watchConsole(page: Page): { errors: string[]; warnings: string[]
 export function expectCleanConsole(
   c: { errors: string[]; warnings: string[]; pageErrors: string[] },
   ignoreWarnings: RegExp[] = [],
+  ignorePageErrors: RegExp[] = [],
 ): void {
-  expect(c.pageErrors, 'uncaught exceptions').toEqual([]);
+  const pageErrors = c.pageErrors.filter((e) => !ignorePageErrors.some((re) => re.test(e)));
+  expect(pageErrors, 'uncaught exceptions').toEqual([]);
   expect(c.errors, 'console errors').toEqual([]);
   const warnings = c.warnings.filter((w) => !ignoreWarnings.some((re) => re.test(w)));
   expect(warnings, 'console warnings outside the allowlist').toEqual([]);

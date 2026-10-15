@@ -1,9 +1,10 @@
 // Headless replay harness page (replay.html). No rendering, no WebGPU: the
-// simulation runs on this page's main thread so Playwright can compare hashes
-// in Chromium, WebKit and Firefox against Node (MASTER 13.1 test:golden).
-// This page must never write to console.error.
+// simulation runs in the same worker module as the game, so Rapier is bundled
+// once, and Playwright compares hashes in Chromium, WebKit and Firefox against
+// Node (MASTER 13.1 test:golden). This page must never write to console.error.
 
-import { getScene, runScene, runReplay, initRapier } from '../sim/index.ts';
+import * as Comlink from 'comlink';
+import type { SimWorker } from './sim-worker.ts';
 import type { ReplayFile, ReplayResult } from '../sim/index.ts';
 
 export interface ReplayHarness {
@@ -19,26 +20,6 @@ declare global {
   }
 }
 
-function parseReplay(replayJson: string | ReplayFile): ReplayFile {
-  const value: unknown = typeof replayJson === 'string' ? JSON.parse(replayJson) : replayJson;
-  if (typeof value !== 'object' || value === null) throw new Error('replay must be a JSON object');
-  const r = value as Partial<ReplayFile>;
-  if (
-    typeof r.format !== 'number' ||
-    typeof r.seed !== 'number' ||
-    typeof r.ticks !== 'number' ||
-    typeof r.hashEvery !== 'number' ||
-    typeof r.scene !== 'object' ||
-    r.scene === null ||
-    typeof r.scene.id !== 'string' ||
-    typeof r.scene.version !== 'number' ||
-    !Array.isArray(r.inputs)
-  ) {
-    throw new Error('replay is missing format, scene, seed, ticks, hashEvery or inputs');
-  }
-  return r as ReplayFile;
-}
-
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
 
@@ -50,7 +31,11 @@ function log(text: string): void {
   if (logEl !== null) logEl.textContent = `${logEl.textContent ?? ''}${text}\n`;
 }
 
-const ready = initRapier().then(
+const worker = new Worker(new URL('./sim-worker.ts', import.meta.url), { type: 'module' });
+const host = Comlink.wrap<SimWorker>(worker);
+
+// Loading a scene initialises Rapier inside the worker; after that every call is quick.
+const ready = host.load('free-fall', 1).then(
   () => {
     setStatus(`ready - ${navigator.userAgent}`);
   },
@@ -64,14 +49,14 @@ const harness: ReplayHarness = {
   ready,
   async run(replayJson) {
     await ready;
-    const replay = parseReplay(replayJson);
-    const result = await runReplay(replay);
-    log(`replay ${replay.scene.id} seed ${replay.seed} ticks ${result.ticks}: ${result.finalHash}`);
+    const result = await host.runReplay(replayJson);
+    const id = typeof replayJson === 'string' ? (JSON.parse(replayJson) as ReplayFile).scene.id : replayJson.scene.id;
+    log(`replay ${id} ticks ${result.ticks}: ${result.finalHash}`);
     return result;
   },
   async runScene(sceneId, seed, ticks, hashEvery = 60) {
     await ready;
-    const { result } = await runScene(getScene(sceneId), seed, ticks, [], hashEvery);
+    const result = await host.runSceneById(sceneId, seed, ticks, hashEvery);
     log(`scene ${sceneId} seed ${seed} ticks ${result.ticks}: ${result.finalHash}`);
     return result;
   },

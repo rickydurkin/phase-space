@@ -211,6 +211,12 @@ export class SimWorker {
     return runReplay(parseReplay(replayJson));
   }
 
+  /** Run a scene by id with no inputs; the replay page uses this across engines. */
+  async runSceneById(sceneId: string, seed: number, ticks: number, hashEvery = HASH_EVERY): Promise<ReplayResult> {
+    const { result } = await runScene(getScene(sceneId), seed, ticks, [], hashEvery);
+    return result;
+  }
+
   /**
    * Determinism check: rebuild the simulation from the same scene, seed and
    * input log, run to the same tick and compare hashes.

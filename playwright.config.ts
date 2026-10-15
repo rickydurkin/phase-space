@@ -66,7 +66,7 @@ export default defineConfig({
     },
     // Playwright's Firefox build does not start on macOS 27 (ADR 0009); the SpiderMonkey
     // check runs in CI and in the nightly macOS and Windows runners. PS_FIREFOX=1 forces it.
-    ...(process.platform !== 'darwin' || process.env['PS_FIREFOX'] === '1' || process.env['CI'] !== undefined
+    ...(process.platform !== 'darwin' || process.env['PS_FIREFOX'] === '1' || (process.env['CI'] ?? '') !== ''
       ? [
           {
             name: 'firefox',
