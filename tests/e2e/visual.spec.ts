@@ -37,7 +37,8 @@ for (const variant of ['webgpu', 'webgl']) {
     }
     mkdirSync('reports/visual', { recursive: true });
     await page.screenshot({ path: `reports/visual/cube-drop-120-${info.project.name}-${variant}.png` });
-    const baselinePath = `tests/visual/baselines/cube-drop-120-${info.project.name}-${variant}.json`;
+    const adapter = `${process.platform}-${process.env['PS_SWIFTSHADER'] === '1' || (process.platform !== 'darwin' && process.env['PS_REAL_GPU'] !== '1') ? 'swiftshader' : 'gpu'}`;
+    const baselinePath = `tests/visual/baselines/cube-drop-120-${info.project.name}-${variant}-${adapter}.json`;
     const current: Baseline = { backend, regions };
     if (!existsSync(baselinePath)) {
       mkdirSync('tests/visual/baselines', { recursive: true });

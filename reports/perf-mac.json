@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-15T22:20:46.576Z",
+  "machine": "Apple M4 Max",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "backend": "WebGPU",
+  "seconds": 8,
+  "results": [
+    {
+      "scene": "cube-drop",
+      "tier": "Ultra (P00: single tier)",
+      "backend": "WebGPU",
+      "frames": 962,
+      "frameMs": {
+        "p50": 8.300000011920929,
+        "p95": 8.700000047683716,
+        "p99": 9.299999952316284
+      },
+      "fps": 120.10190194636705,
+      "asMsPerFrame": 0,
+      "asMsPerSimulatedSecond": 0,
+      "tick": 984
+    },
+    {
+      "scene": "stack-1000",
+      "tier": "Ultra (P00: single tier)",
+      "backend": "WebGPU",
+      "frames": 961,
+      "frameMs": {
+        "p50": 8.300000011920929,
+        "p95": 8.900000035762787,
+        "p99": 9.300000011920929
+      },
+      "fps": 120.11612885224515,
+      "asMsPerFrame": 1.399999976158142,
+      "asMsPerSimulatedSecond": 168.16257752935155,
+      "tick": 1083
+    }
+  ]
+}

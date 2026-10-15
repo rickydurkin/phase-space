@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-15T22:15:20.164Z",
+  "seconds": 10,
+  "rows": [
+    {
+      "variant": "react",
+      "readouts": 200,
+      "hz": 20,
+      "updates": 200,
+      "mainThreadMsPerUpdate": 3.0167150000000005,
+      "scriptMsPerUpdate": 0.54764,
+      "layoutMsPerUpdate": 1.11401,
+      "styleMsPerUpdate": 0.000995,
+      "syncMsPerUpdate": 0.08599999874830246,
+      "jsHeapMB": 3.2874794006347656
+    },
+    {
+      "variant": "preact",
+      "readouts": 200,
+      "hz": 20,
+      "updates": 200,
+      "mainThreadMsPerUpdate": 1.7349399999999997,
+      "scriptMsPerUpdate": 0.25890500000000005,
+      "layoutMsPerUpdate": 0.69552,
+      "styleMsPerUpdate": 0.000715,
+      "syncMsPerUpdate": 0.04899999916553497,
+      "jsHeapMB": 2.676361083984375
+    },
+    {
+      "variant": "react",
+      "readouts": 200,
+      "hz": 20,
+      "updates": 200,
+      "mainThreadMsPerUpdate": 2.2602199999999995,
+      "scriptMsPerUpdate": 0.4172999999999999,
+      "layoutMsPerUpdate": 0.884845,
+      "styleMsPerUpdate": 0.0009050000000000001,
+      "syncMsPerUpdate": 0.04199999958276748,
+      "jsHeapMB": 4.658103942871094
+    },
+    {
+      "variant": "preact",
+      "readouts": 200,
+      "hz": 20,
+      "updates": 200,
+      "mainThreadMsPerUpdate": 2.0980149999999997,
+      "scriptMsPerUpdate": 0.308095,
+      "layoutMsPerUpdate": 0.8584350000000002,
+      "styleMsPerUpdate": 0.000935,
+      "syncMsPerUpdate": 0.044000000059604645,
+      "jsHeapMB": 3.657745361328125
+    }
+  ]
+}

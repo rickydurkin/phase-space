@@ -1,4 +1,9 @@
 {
   "_comment": "Console warnings allowed in automated runs (MASTER 2.9). Errors are never allowed. Each entry needs a reason.",
-  "warnings": []
+  "warnings": [
+    {
+      "pattern": "GL Driver Message \\(OpenGL, Performance, GL_CLOSE_PATH_NV, High\\): GPU stall due to ReadPixels",
+      "reason": "ANGLE performance notice raised by the test API's WebGL2 pixel readback (window.__ps.readPixels), which only exists in test builds; production builds never read pixels back."
+    }
+  ]
 }

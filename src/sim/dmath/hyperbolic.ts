@@ -59,7 +59,12 @@ export function cosh(x: number): number {
   return huge * huge;
 }
 
-/** Deterministic hyperbolic tangent (fdlibm s_tanh.c). */
+/**
+ * Deterministic hyperbolic tangent. fdlibm s_tanh.c with musl's range split:
+ * for log(5/3)/2 < |x| <= log(3)/2 the form t/(t+2) with t = expm1(2|x|)
+ * avoids the cancellation that pushes fdlibm's -t/(t+2) form to 2.04 ulp
+ * (measured on 3 of a million samples, 15/10/2026).
+ */
 export function tanh(x: number): number {
   const jx = hi(x);
   const ix = jx & 0x7fffffff;
@@ -70,9 +75,14 @@ export function tanh(x: number): number {
   let z: number;
   if (ix < 0x40360000) {
     if (ix < 0x3c800000) return x * (one + x);
-    if (ix >= 0x3ff00000) {
+    if (ix > 0x3fe193ea) {
+      // |x| > log(3)/2: 1 - 2/(expm1(2|x|) + 2)
       const t = expm1(two * Math.abs(x));
       z = one - two / (t + two);
+    } else if (ix > 0x3fd058ae) {
+      // |x| > log(5/3)/2: t/(t+2) with t = expm1(2|x|) > 0
+      const t = expm1(two * Math.abs(x));
+      z = t / (t + two);
     } else {
       const t = expm1(-two * Math.abs(x));
       z = -t / (t + two);

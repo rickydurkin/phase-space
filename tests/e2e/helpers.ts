@@ -24,13 +24,20 @@ export function watchConsole(page: Page): { errors: string[]; warnings: string[]
     }
   });
   page.on('pageerror', (e) => pageErrors.push(e.message));
+  page.on('response', (r) => {
+    if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`);
+  });
   return { errors, warnings, pageErrors };
 }
 
-export function expectCleanConsole(c: { errors: string[]; warnings: string[]; pageErrors: string[] }): void {
+export function expectCleanConsole(
+  c: { errors: string[]; warnings: string[]; pageErrors: string[] },
+  ignoreWarnings: RegExp[] = [],
+): void {
   expect(c.pageErrors, 'uncaught exceptions').toEqual([]);
   expect(c.errors, 'console errors').toEqual([]);
-  expect(c.warnings, 'console warnings outside the allowlist').toEqual([]);
+  const warnings = c.warnings.filter((w) => !ignoreWarnings.some((re) => re.test(w)));
+  expect(warnings, 'console warnings outside the allowlist').toEqual([]);
 }
 
 /** Open the game and wait until the test API reports boot complete. Returns the boot time in ms. */

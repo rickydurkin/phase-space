@@ -1,5 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { bootGame, watchConsole, expectCleanConsole, findCube } from './helpers.ts';
+import type { Page } from '@playwright/test';
+
+/** readPixels throws while the renderer is rebuilding; treat that as "not yet". */
+async function cubeVisible(page: Page): Promise<boolean> {
+  try {
+    return (await findCube(page)).found;
+  } catch {
+    return false;
+  }
+}
 import type { TestApi } from '../../src/app/test-api.ts';
 
 test('WebGPU device loss recovers with the simulation state intact', async ({ page, browserName }) => {
@@ -17,7 +27,7 @@ test('WebGPU device loss recovers with the simulation state intact', async ({ pa
   const crashed = await page.evaluate(() => (window.__ps as TestApi).crashGpu());
   expect(crashed).toBe(true);
   // Recovery is asynchronous: wait until the renderer draws the cube again.
-  await expect.poll(async () => (await findCube(page)).found, { timeout: 30_000 }).toBe(true);
+  await expect.poll(() => cubeVisible(page), { timeout: 30_000, intervals: [500] }).toBe(true);
 
   const after = await page.evaluate(() => (window.__ps as TestApi).getState());
   expect(after.tick).toBe(before.tick);
@@ -38,9 +48,10 @@ test('GPU process crash through the DevTools protocol does not break the page', 
   const session = await browser.newBrowserCDPSession();
   await session.send('Browser.crashGpuProcess');
   await page.waitForTimeout(2000);
-  await expect.poll(async () => (await findCube(page)).found, { timeout: 30_000 }).toBe(true);
+  await expect.poll(() => cubeVisible(page), { timeout: 30_000, intervals: [500] }).toBe(true);
   const after = await page.evaluate(() => (window.__ps as TestApi).getState());
   expect(after.hash).toBe(before.hash);
   expect(await page.evaluate(() => (window.__ps as TestApi).errors())).toEqual([]);
-  expectCleanConsole(c);
+  // Chromium itself reports the instance loss when its GPU process is killed on purpose here.
+  expectCleanConsole(c, [/A valid external Instance reference no longer exists/]);
 });

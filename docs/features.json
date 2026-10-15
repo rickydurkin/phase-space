@@ -2,27 +2,338 @@
   "programme": "phase-space",
   "programmeVersion": "1.0.0",
   "features": [
-    { "id": "P00-001", "phase": "P00", "priority": 1, "category": "tooling", "description": "Bootstrap: repository, programme pack, progress notes, package.json", "verifier": "git log; cat docs/PROGRESS.md", "steps": ["Initialise git", "Copy programme/", "Write PROGRESS.md and P00-plan.md", "Commit"], "passes": false, "evidence": null },
-    { "id": "P00-002", "phase": "P00", "priority": 1, "category": "determinism", "description": "dmath: fdlibm-derived transcendental functions within 2 ulp of high-precision references", "verifier": "npm run test:dmath:full", "steps": ["Port sin cos tan exp expm1 log log1p log2 log10 pow atan atan2 asin acos sinh cosh tanh cbrt hypot", "Million-sample reference test per function"], "passes": false, "evidence": null },
-    { "id": "P00-003", "phase": "P00", "priority": 1, "category": "determinism", "description": "Keyed RNG streams, FNV-1a 64 hashing, branded units, CODATA constants", "verifier": "vitest run --project unit tests/unit/rng.test.ts tests/unit/hash.test.ts", "steps": ["Counter-based keyed streams", "Serialise counters", "Published FNV vectors"], "passes": false, "evidence": null },
-    { "id": "P00-004", "phase": "P00", "priority": 1, "category": "core", "description": "World registry with stable ids, SoA stores, snapshot and restore", "verifier": "vitest run --project unit tests/unit/world.test.ts", "steps": ["Ascending id allocation", "Component masks", "Binary snapshot"], "passes": false, "evidence": null },
-    { "id": "P00-005", "phase": "P00", "priority": 1, "category": "core", "description": "Scheduler: fixed tick, documented order, input log, state hash, snapshot", "verifier": "vitest run --project golden", "steps": ["Simulation.step order per SCHEDULE.md", "Inputs stamped by tick", "FNV-1a 64 state hash"], "passes": false, "evidence": null },
-    { "id": "P00-006", "phase": "P00", "priority": 1, "category": "core", "description": "Frame clock: drop-not-stretch budget of 48 ticks per frame with achieved-rate signal", "verifier": "vitest run --project unit tests/unit/clock.test.ts", "steps": ["Accumulator", "Budget and dropped time", "Interpolation alpha"], "passes": false, "evidence": null },
-    { "id": "P00-007", "phase": "P00", "priority": 1, "category": "core", "description": "Energy ledger skeleton with window check, alarm and negative controls", "verifier": "vitest run --project unit tests/unit/ledger.test.ts", "steps": ["Stores and transfers", "10 s window", "Negative control trips the alarm"], "passes": false, "evidence": null },
-    { "id": "P00-008", "phase": "P00", "priority": 1, "category": "mechanics", "description": "Rapier mechanics domain: bodies, colliders, gravity, energies, snapshot", "verifier": "vitest run --project validation --project golden", "steps": ["Adapter per DomainModule", "Mirror state into components", "Snapshot via takeSnapshot"], "passes": false, "evidence": null },
-    { "id": "P00-009", "phase": "P00", "priority": 1, "category": "mechanics", "description": "Bench M1 free fall within 0.5% with negative control", "verifier": "vitest run --project validation", "steps": ["Scene free-fall", "Compare with 0.5 g t^2", "Negative control fails"], "passes": false, "evidence": null },
-    { "id": "P00-010", "phase": "P00", "priority": 1, "category": "determinism", "description": "Golden replay cube-drop: three Node runs, stubbed worker, 30/60/120/144 Hz, 0.01x/1x/100x, snapshot at 300", "verifier": "vitest run --project golden", "steps": ["Golden file", "Throwing stubs worker", "Frame pacing and time scale invariance", "Snapshot restore"], "passes": false, "evidence": null },
-    { "id": "P00-011", "phase": "P00", "priority": 1, "category": "determinism", "description": "Golden replay identical in Chromium, WebKit and Firefox through Playwright", "verifier": "playwright test tests/e2e/golden.spec.ts", "steps": ["replay.html harness", "Compare hashes with the golden file in each engine"], "passes": false, "evidence": null },
-    { "id": "P00-012", "phase": "P00", "priority": 1, "category": "tooling", "description": "Lint blocks Math.random, Date.now, Math.sin, Math.tanh, the ** operator and non-allowlisted imports in src/sim; a test proves each rule fires", "verifier": "vitest run --project unit tests/unit/lint-rules.test.ts", "steps": ["ESLint plugin", "dependency-cruiser", "Rule tests"], "passes": false, "evidence": null },
-    { "id": "P00-013", "phase": "P00", "priority": 2, "category": "tooling", "description": "Fuzzing: random drop scenes deterministic, finite, snapshot round trip", "verifier": "npm run test:fuzz", "steps": ["fast-check property", "Seeds logged"], "passes": false, "evidence": null },
-    { "id": "P00-014", "phase": "P00", "priority": 2, "category": "gpu", "description": "GPU kernel test through Dawn in Node against a CPU reference, plus WGSL validation", "verifier": "npm run test:gpu", "steps": ["advect.wgsl", "CPU reference", "Validator with line numbers"], "passes": false, "evidence": null },
-    { "id": "P00-015", "phase": "P00", "priority": 1, "category": "presentation", "description": "Vite app: WebGPURenderer with WebGL2 fallback, AS in a worker with transferable frames and interpolation, floor and cube, orbit camera, HUD, error overlay, R to replay", "verifier": "npm run test:e2e:smoke", "steps": ["Worker bridge", "Renderer", "Camera", "HUD", "Error overlay"], "passes": false, "evidence": null },
-    { "id": "P00-016", "phase": "P00", "priority": 1, "category": "testing", "description": "E2E: interactive within 30 s under SwiftShader, zero console errors, cube visible by pixel readback, device loss recovers with state intact, WebGL2 path boots", "verifier": "npm run test:e2e", "steps": ["smoke.spec", "device-loss.spec", "webgl.spec"], "passes": false, "evidence": null },
-    { "id": "P00-017", "phase": "P00", "priority": 2, "category": "testing", "description": "test:visual, test:soak (5 minutes), perf:mac and gate commands exist and run", "verifier": "npm run gate P00", "steps": ["visual.spec", "soak.spec", "perf-mac tool", "gate tool"], "passes": false, "evidence": null },
-    { "id": "P00-018", "phase": "P00", "priority": 2, "category": "tooling", "description": "missions:verify wired with an empty mission set; content lint; count check", "verifier": "npm run missions:verify && npm run lint:content && node tools/check-counts.ts", "steps": ["Schema", "Report", "Baseline counts"], "passes": false, "evidence": null },
-    { "id": "P00-019", "phase": "P00", "priority": 2, "category": "ci", "description": "GitHub Actions ci.yml, nightly.yml, deploy.yml (deploy gated on Ricky's approval), bundle size budget", "verifier": "cat .github/workflows/*.yml; npm run size:check", "steps": ["Workflows", "Artefact upload", "Size budget"], "passes": false, "evidence": null },
-    { "id": "P00-020", "phase": "P00", "priority": 2, "category": "harness", "description": "Claude Code setup: CLAUDE.md, rules, hooks, five subagents, five skills, MCP config; hooks proven on a scratch branch", "verifier": "node tools/hooks/post-edit.js with a type error", "steps": ["Files", "Hook proof"], "passes": false, "evidence": null },
-    { "id": "P00-021", "phase": "P00", "priority": 2, "category": "research", "description": "Spikes S1 to S6 with measured numbers in ADRs; tick decision recorded; research refresh written", "verifier": "ls docs/adr docs/research", "steps": ["S1 Rapier 1,000 bodies", "S2 renderer", "S3 HUD", "S4 test stack", "S5 dmath", "S6 tick"], "passes": false, "evidence": null },
-    { "id": "P00-022", "phase": "P00", "priority": 2, "category": "docs", "description": "Documents: PROGRESS, DEFECTS, LEARNINGS, IDEAS, PHYSICS-CHANGELOG, BASELINE, SCHEDULE, model card, ADRs", "verifier": "ls docs", "steps": ["Write", "Keep PROGRESS under 150 lines"], "passes": false, "evidence": null }
+    {
+      "id": "P00-001",
+      "phase": "P00",
+      "priority": 1,
+      "category": "tooling",
+      "description": "Bootstrap: repository, programme pack, progress notes, package.json",
+      "verifier": "git log; cat docs/PROGRESS.md",
+      "steps": [
+        "Initialise git",
+        "Copy programme/",
+        "Write PROGRESS.md and P00-plan.md",
+        "Commit"
+      ],
+      "passes": true,
+      "evidence": "git log: 7c9b1d2 bootstrap commit; docs/PROGRESS.md and docs/phases/P00-plan.md present"
+    },
+    {
+      "id": "P00-002",
+      "phase": "P00",
+      "priority": 1,
+      "category": "determinism",
+      "description": "dmath: fdlibm-derived transcendental functions within 2 ulp of high-precision references",
+      "verifier": "npm run test:dmath:full",
+      "steps": [
+        "Port sin cos tan exp expm1 log log1p log2 log10 pow atan atan2 asin acos sinh cosh tanh cbrt hypot",
+        "Million-sample reference test per function"
+      ],
+      "passes": false,
+      "evidence": null
+    },
+    {
+      "id": "P00-003",
+      "phase": "P00",
+      "priority": 1,
+      "category": "determinism",
+      "description": "Keyed RNG streams, FNV-1a 64 hashing, branded units, CODATA constants",
+      "verifier": "vitest run --project unit tests/unit/rng.test.ts tests/unit/hash.test.ts",
+      "steps": [
+        "Counter-based keyed streams",
+        "Serialise counters",
+        "Published FNV vectors"
+      ],
+      "passes": true,
+      "evidence": "vitest unit 15/10/2026: rng.test.ts 5 passed (FNV vectors cbf29ce484222325, af63dc4c8601ec8c, 85944171f73967e8; stream independence; serialise round trip)"
+    },
+    {
+      "id": "P00-004",
+      "phase": "P00",
+      "priority": 1,
+      "category": "core",
+      "description": "World registry with stable ids, SoA stores, snapshot and restore",
+      "verifier": "vitest run --project unit tests/unit/world.test.ts",
+      "steps": [
+        "Ascending id allocation",
+        "Component masks",
+        "Binary snapshot"
+      ],
+      "passes": true,
+      "evidence": "vitest unit 15/10/2026: world.test.ts 5 passed (ascending ids, smallest free id reused, snapshot round trip identical hash)"
+    },
+    {
+      "id": "P00-005",
+      "phase": "P00",
+      "priority": 1,
+      "category": "core",
+      "description": "Scheduler: fixed tick, documented order, input log, state hash, snapshot",
+      "verifier": "vitest run --project golden",
+      "steps": [
+        "Simulation.step order per SCHEDULE.md",
+        "Inputs stamped by tick",
+        "FNV-1a 64 state hash"
+      ],
+      "passes": true,
+      "evidence": "vitest golden 15/10/2026: 6 passed; three in-process runs equal the golden hashes; final hash 3374e5261804bf27 at tick 1200"
+    },
+    {
+      "id": "P00-006",
+      "phase": "P00",
+      "priority": 1,
+      "category": "core",
+      "description": "Frame clock: drop-not-stretch budget of 48 ticks per frame with achieved-rate signal",
+      "verifier": "vitest run --project unit tests/unit/clock.test.ts",
+      "steps": [
+        "Accumulator",
+        "Budget and dropped time",
+        "Interpolation alpha"
+      ],
+      "passes": true,
+      "evidence": "vitest unit 15/10/2026: clock.test.ts 4 passed (119 to 120 ticks per second at 30/60/120/144 Hz; 48-tick budget drops time and flags it)"
+    },
+    {
+      "id": "P00-007",
+      "phase": "P00",
+      "priority": 1,
+      "category": "core",
+      "description": "Energy ledger skeleton with window check, alarm and negative controls",
+      "verifier": "vitest run --project unit tests/unit/ledger.test.ts",
+      "steps": [
+        "Stores and transfers",
+        "10 s window",
+        "Negative control trips the alarm"
+      ],
+      "passes": true,
+      "evidence": "vitest unit 15/10/2026: ledger.test.ts 6 passed (quiet when energy moves between stores or losses are booked; 2% unbooked energy trips the alarm in quiet and busy scenes; 0.1% does not)"
+    },
+    {
+      "id": "P00-008",
+      "phase": "P00",
+      "priority": 1,
+      "category": "mechanics",
+      "description": "Rapier mechanics domain: bodies, colliders, gravity, energies, snapshot",
+      "verifier": "vitest run --project validation --project golden",
+      "steps": [
+        "Adapter per DomainModule",
+        "Mirror state into components",
+        "Snapshot via takeSnapshot"
+      ],
+      "passes": true,
+      "evidence": "Rapier 0.21.0 deterministic-compat: two worlds identical after 480 steps; restore then 600 ticks equals the uninterrupted run (tests/golden/node.test.ts); spike S1 reports/spike-s1-1000.json"
+    },
+    {
+      "id": "P00-009",
+      "phase": "P00",
+      "priority": 1,
+      "category": "mechanics",
+      "description": "Bench M1 free fall within 0.5% with negative control",
+      "verifier": "vitest run --project validation",
+      "steps": [
+        "Scene free-fall",
+        "Compare with 0.5 g t^2",
+        "Negative control fails"
+      ],
+      "passes": true,
+      "evidence": "vitest validation 15/10/2026: M1 expected 19.61330 m, measured 19.62324 m, error 0.0507% (tolerance 0.5%); negative control with g raised 2% fails as required"
+    },
+    {
+      "id": "P00-010",
+      "phase": "P00",
+      "priority": 1,
+      "category": "determinism",
+      "description": "Golden replay cube-drop: three Node runs, stubbed worker, 30/60/120/144 Hz, 0.01x/1x/100x, snapshot at 300",
+      "verifier": "vitest run --project golden",
+      "steps": [
+        "Golden file",
+        "Throwing stubs worker",
+        "Frame pacing and time scale invariance",
+        "Snapshot restore"
+      ],
+      "passes": true,
+      "evidence": "vitest golden 15/10/2026: 6 passed including the stubbed worker (Math.sin throws there; 78,880 inert performance.now reads by Rapier's profiler answered with 0), 30/60/120/144 Hz x 0.01/1/100x all give 3374e5261804bf27, snapshot at 300 then run-on equals the direct run"
+    },
+    {
+      "id": "P00-011",
+      "phase": "P00",
+      "priority": 1,
+      "category": "determinism",
+      "description": "Golden replay identical in Chromium, WebKit and Firefox through Playwright",
+      "verifier": "playwright test tests/e2e/golden.spec.ts",
+      "steps": [
+        "replay.html harness",
+        "Compare hashes with the golden file in each engine"
+      ],
+      "passes": false,
+      "evidence": "playwright golden.spec 15/10/2026: Chromium (V8) and WebKit (JavaScriptCore) reproduce cube-drop 3374e5261804bf27 and stack-1000 cd30206c8caedd4e exactly (reports/engines.json). Firefox: Playwright's Firefox 157 Nightly does not start on this macOS (ADR 0009); SpiderMonkey evidence waits for CI on Linux."
+    },
+    {
+      "id": "P00-012",
+      "phase": "P00",
+      "priority": 1,
+      "category": "tooling",
+      "description": "Lint blocks Math.random, Date.now, Math.sin, Math.tanh, the ** operator and non-allowlisted imports in src/sim; a test proves each rule fires",
+      "verifier": "vitest run --project unit tests/unit/lint-rules.test.ts",
+      "steps": [
+        "ESLint plugin",
+        "dependency-cruiser",
+        "Rule tests"
+      ],
+      "passes": true,
+      "evidence": "vitest unit 15/10/2026: lint-rules.test.ts 9 passed (each rule fires on its probe; positive control passes; rules do not apply outside src/sim)"
+    },
+    {
+      "id": "P00-013",
+      "phase": "P00",
+      "priority": 2,
+      "category": "tooling",
+      "description": "Fuzzing: random drop scenes deterministic, finite, snapshot round trip",
+      "verifier": "npm run test:fuzz",
+      "steps": [
+        "fast-check property",
+        "Seeds logged"
+      ],
+      "passes": true,
+      "evidence": "vitest fuzz 15/10/2026: 60 random drop scenes deterministic, finite, no tunnelling, snapshot round trip identical (fast-check, 2.0 s)"
+    },
+    {
+      "id": "P00-014",
+      "phase": "P00",
+      "priority": 2,
+      "category": "gpu",
+      "description": "GPU kernel test through Dawn in Node against a CPU reference, plus WGSL validation",
+      "verifier": "npm run test:gpu",
+      "steps": [
+        "advect.wgsl",
+        "CPU reference",
+        "Validator with line numbers"
+      ],
+      "passes": true,
+      "evidence": "node --test tests/gpu 15/10/2026: 2 passed on Apple M4 Max Metal (advect 4096 particles, 12925/16384 bit-exact, max diff 2.4e-7 = 1 f32 ulp); negative control reports line 3; tools/wgsl-validate.ts ok"
+    },
+    {
+      "id": "P00-015",
+      "phase": "P00",
+      "priority": 1,
+      "category": "presentation",
+      "description": "Vite app: WebGPURenderer with WebGL2 fallback, AS in a worker with transferable frames and interpolation, floor and cube, orbit camera, HUD, error overlay, R to replay",
+      "verifier": "npm run test:e2e:smoke",
+      "steps": [
+        "Worker bridge",
+        "Renderer",
+        "Camera",
+        "HUD",
+        "Error overlay"
+      ],
+      "passes": true,
+      "evidence": "src/app, src/render, src/ui by the presentation subagent; verified in the built-in browser (Chrome 152, WebGPU and WebGL2) and by tests/e2e/smoke.spec.ts: boot 282 ms, backend WebGPU, cube visible, replay matches, console clean (15/10/2026)"
+    },
+    {
+      "id": "P00-016",
+      "phase": "P00",
+      "priority": 1,
+      "category": "testing",
+      "description": "E2E: interactive within 30 s under SwiftShader, zero console errors, cube visible by pixel readback, device loss recovers with state intact, WebGL2 path boots",
+      "verifier": "npm run test:e2e",
+      "steps": [
+        "smoke.spec",
+        "device-loss.spec",
+        "webgl.spec"
+      ],
+      "passes": true,
+      "evidence": "playwright chromium 15/10/2026 (full Chromium new headless, Metal): smoke, webgl, device-loss (test API destroy and CDP Browser.crashGpuProcess; tick and hash intact), visual (webgpu and webgl baselines) 6 passed in 10.7 s. SwiftShader boot budget is a CI (Linux) measurement, pending the first CI run (ADR 0009)."
+    },
+    {
+      "id": "P00-017",
+      "phase": "P00",
+      "priority": 2,
+      "category": "testing",
+      "description": "test:visual, test:soak (5 minutes), perf:mac and gate commands exist and run",
+      "verifier": "npm run gate P00",
+      "steps": [
+        "visual.spec",
+        "soak.spec",
+        "perf-mac tool",
+        "gate tool"
+      ],
+      "passes": false,
+      "evidence": null
+    },
+    {
+      "id": "P00-018",
+      "phase": "P00",
+      "priority": 2,
+      "category": "tooling",
+      "description": "missions:verify wired with an empty mission set; content lint; count check",
+      "verifier": "npm run missions:verify && npm run lint:content && node tools/check-counts.ts",
+      "steps": [
+        "Schema",
+        "Report",
+        "Baseline counts"
+      ],
+      "passes": true,
+      "evidence": "missions:verify: 0 mission files, 0 verified, 0 failed; content-lint: 0 problems (a probe file with an em dash, a curly quote and a US spelling was flagged 3 times); tests/counts.json baseline written"
+    },
+    {
+      "id": "P00-019",
+      "phase": "P00",
+      "priority": 2,
+      "category": "ci",
+      "description": "GitHub Actions ci.yml, nightly.yml, deploy.yml (deploy gated on Ricky's approval), bundle size budget",
+      "verifier": "cat .github/workflows/*.yml; npm run size:check",
+      "steps": [
+        "Workflows",
+        "Artefact upload",
+        "Size budget"
+      ],
+      "passes": false,
+      "evidence": null
+    },
+    {
+      "id": "P00-020",
+      "phase": "P00",
+      "priority": 2,
+      "category": "harness",
+      "description": "Claude Code setup: CLAUDE.md, rules, hooks, five subagents, five skills, MCP config; hooks proven on a scratch branch",
+      "verifier": "node tools/hooks/post-edit.js with a type error",
+      "steps": [
+        "Files",
+        "Hook proof"
+      ],
+      "passes": true,
+      "evidence": "docs/phases/P00-hook-proof.md: PostToolUse exit 2 on a type error (TS2322) and on invalid WGSL (error at 3:7, a let of type f32 given a u32); clean file exit 0; Stop hook with stop_hook_active true exit 0. Agents 5, skills 5, rules 3, .mcp.json. Behaviour inside a live Claude Code CLI session not yet observed (CLI not on PATH in session 1)."
+    },
+    {
+      "id": "P00-021",
+      "phase": "P00",
+      "priority": 2,
+      "category": "research",
+      "description": "Spikes S1 to S6 with measured numbers in ADRs; tick decision recorded; research refresh written",
+      "verifier": "ls docs/adr docs/research",
+      "steps": [
+        "S1 Rapier 1,000 bodies",
+        "S2 renderer",
+        "S3 HUD",
+        "S4 test stack",
+        "S5 dmath",
+        "S6 tick"
+      ],
+      "passes": true,
+      "evidence": "ADRs 0004 (S1: 1,000 bodies p50 4.4 ms per tick, snapshot 1.96 MB, restore+600 identical), 0005 (S6: 120 Hz default; 300 bodies 187 ms per simulated second; about 100 bodies at 480 Hz, 50 at 960 Hz), 0006 (S5: dmath 1.0 to 2.7x Math, pow 5.9x; million-sample accuracy), 0007 (S2: 1,000 meshes at 120 Hz vsync-bound on Chrome 155 Metal; 10,000 instanced deferred to P1), 0008 (S3: Preact signals 1.7 to 2.1 ms per update against React with Zustand 2.3 to 3.0 ms), 0009 (S4: SwiftShader on macOS loses the device; real GPU locally, SwiftShader in CI; Firefox build does not start locally). docs/research/2026-10-15-refresh.md written."
+    },
+    {
+      "id": "P00-022",
+      "phase": "P00",
+      "priority": 2,
+      "category": "docs",
+      "description": "Documents: PROGRESS, DEFECTS, LEARNINGS, IDEAS, PHYSICS-CHANGELOG, BASELINE, SCHEDULE, model card, ADRs",
+      "verifier": "ls docs",
+      "steps": [
+        "Write",
+        "Keep PROGRESS under 150 lines"
+      ],
+      "passes": true,
+      "evidence": "docs/: PROGRESS, DEFECTS, LEARNINGS (7), IDEAS (3), PHYSICS-CHANGELOG (0.1.0), BASELINE (pending perf:mac), architecture/SCHEDULE.md, model-cards/mechanics-rigid.md, adr/0001 to 0006, research/2026-10-15-refresh.md"
+    }
   ]
 }

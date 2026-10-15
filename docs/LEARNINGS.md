@@ -9,3 +9,9 @@ One line per surprise. These feed the next programme version (MASTER 16.2).
 - 15/10/2026: Rapier JavaScript handles are doubles whose bit pattern encodes the arena index and generation (the second body's handle prints as 5e-324). Never do arithmetic on them; store them as raw f64 bits in snapshots.
 - 15/10/2026: npm 11.19 no longer runs install scripts by default; the webgpu package's postinstall (quarantine attribute removal on macOS) did not run and was not needed.
 - 15/10/2026: bitECS 0.4 cannot restore an entity under a chosen id without its remapping serialiser, which conflicts with stable ids (ADR 0002).
+- 15/10/2026: SwiftShader WebGPU on macOS 27 loses the device at the first canvas present in both the Chromium headless shell and full Chromium; the research's SwiftShader verification was on Linux, so CI and local runs need different Chromium modes (ADR 0009).
+- 15/10/2026: Playwright's `reuseExistingServer` happily reuses a stale preview server left behind by a diagnostic script, so a rebuilt bundle was never served; kill listeners on the preview port before trusting an e2e run.
+- 15/10/2026: the browser's automatic favicon request turned into a console error (404) that the zero-console-errors rule caught on the first e2e run; declare an empty icon in every page.
+- 15/10/2026: decimal.js cannot be trusted as a reference for sin, cos and tan at large arguments unless the input is exact and the working precision covers the integer part; bc at 120 digits settled the disagreement in fdlibm's favour.
+- 15/10/2026: Playwright's Firefox Nightly build does not start on this macOS even outside the tool sandbox and with Firefox's own sandboxes disabled; cross-engine checks for SpiderMonkey wait for CI.
+- 15/10/2026: a Vite config built from `new URL(...).pathname` percent-encodes the space in "Application Support" and the build silently targets a path that does not exist; use fileURLToPath.

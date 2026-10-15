@@ -38,7 +38,7 @@ test('soak: random play for the configured minutes with a flat JS heap and a cle
       const st = await page.evaluate(() => (window.__ps as TestApi).getState());
       await page.evaluate(
         ([tick, ix, iz]) => (window.__ps as TestApi).applyInputs([{ type: 'impulse', tick, entity: 2, ix, iy: 400, iz }]),
-        [st.tick + 1, (rnd() - 0.5) * 600, (rnd() - 0.5) * 600] as const,
+        [st.tick + 120, (rnd() - 0.5) * 600, (rnd() - 0.5) * 600] as const, // stamped a second ahead so the worker has not passed it
       );
     } else if (r < 0.9) await page.evaluate(() => (window.__ps as TestApi).step(60));
     else {

@@ -22,7 +22,7 @@ function pct(sorted: number[], p: number): number {
 async function main(): Promise<void> {
   const build = spawnSync('node', ['tools/build-test.js'], { stdio: 'inherit' });
   if ((build.status ?? 1) !== 0) throw new Error('build:test failed');
-  const server = spawn('npx', ['vite', 'preview', '--outDir', 'dist-test', '--port', '4173', '--strictPort'], { stdio: 'ignore' });
+  const server = spawn('npx', ['vite', 'preview', '--outDir', 'dist-test', '--port', '4176', '--strictPort'], { stdio: 'ignore' });
   await new Promise((r) => setTimeout(r, 2500));
   const machine = spawnSync('sysctl', ['-n', 'machdep.cpu.brand_string'], { encoding: 'utf8' }).stdout.trim();
   const results: Record<string, unknown>[] = [];
@@ -33,7 +33,7 @@ async function main(): Promise<void> {
   });
   try {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-    await page.goto('http://localhost:4173/');
+    await page.goto('http://localhost:4176/');
     await page.waitForFunction(() => window.__ps !== undefined);
     await page.evaluate(() => window.__ps?.ready);
     const backend = await page.evaluate(() => (window.__ps as TestApi).backend());
@@ -96,7 +96,7 @@ async function main(): Promise<void> {
         return `| ${x.scene} | ${x.tier} | ${x.frameMs.p50.toFixed(2)} | ${x.frameMs.p95.toFixed(2)} | ${x.frameMs.p99.toFixed(2)} | ${x.fps.toFixed(0)} | ${x.asMsPerFrame.toFixed(2)} | ${x.asMsPerSimulatedSecond.toFixed(0)} |`;
       }),
       '',
-      'cube-drop is the P00 reference scene; stack-1000 (1,000 cubes) stands in for the stress scene until RS1 to RS5 exist. Raw data: reports/perf-mac.json.',
+      'Frame intervals come from requestAnimationFrame deltas and are bound by the display refresh (8.33 ms at 120 Hz), so a p50 at the refresh interval means no missed vsync; GPU time per frame is not resolved until timestamp queries arrive in P1. cube-drop is the P00 reference scene; stack-1000 (1,000 cubes) stands in for the stress scene until RS1 to RS5 exist. Raw data: reports/perf-mac.json.',
       '',
     ];
     writeFileSync('docs/BASELINE.md', lines.join('\n'));
