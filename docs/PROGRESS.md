@@ -15,7 +15,7 @@ Ricky was not available during session 1, so these are working assumptions, each
 
 ## Current state (session 1)
 
-P00 is built end to end; 21 of 22 features in docs/features.json pass with evidence (P00-011 waits for Firefox in CI). `npm run gate P00` passes 18 of 18 automated items (commit 5b634ab, 16/10/2026) with the caveats listed in the report. The deterministic core, Rapier mechanics, dmath, the golden harness, the browser app (WebGPU with WebGL2 fallback, worker, HUD, replay) and every command in MASTER 13.1 exist and run. The gate report is docs/phases/P00-report.md.
+P00 is built end to end; 20 of 22 features in docs/features.json pass with evidence (P00-011 Firefox and P00-019 CI wait for the first CI run). `npm run gate P00` passes 18 of 18 automated items (commit 5b634ab, 16/10/2026) with the caveats listed in the report. The deterministic core, Rapier mechanics, dmath, the golden harness, the browser app (WebGPU with WebGL2 fallback, worker, HUD, replay) and every command in MASTER 13.1 exist and run. The gate report is docs/phases/P00-report.md.
 
 Known gaps, all recorded in the report:
 
