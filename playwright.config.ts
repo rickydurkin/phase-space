@@ -35,16 +35,18 @@ export default defineConfig({
     ['json', { outputFile: 'reports/playwright.json' }],
   ],
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: 'http://localhost:4181',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',
   },
   webServer: {
     command: 'npm run build:test && npm run preview',
-    url: 'http://localhost:4173/replay.html',
+    url: 'http://localhost:4181/replay.html',
     timeout: 300_000,
-    reuseExistingServer: process.env['CI'] === undefined,
+    // Always build and serve our own bundle: another project on the same machine may be
+    // listening on a nearby port, and evidence must come from this checkout.
+    reuseExistingServer: false,
     stdout: 'ignore',
     stderr: 'pipe',
   },
@@ -62,10 +64,16 @@ export default defineConfig({
       use: { ...devices['Desktop Safari'] },
       testMatch: /golden\.spec\.ts/,
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-      testMatch: /golden\.spec\.ts/,
-    },
+    // Playwright's Firefox build does not start on macOS 27 (ADR 0009); the SpiderMonkey
+    // check runs in CI and in the nightly macOS and Windows runners. PS_FIREFOX=1 forces it.
+    ...(process.platform !== 'darwin' || process.env['PS_FIREFOX'] === '1' || process.env['CI'] !== undefined
+      ? [
+          {
+            name: 'firefox',
+            use: { ...devices['Desktop Firefox'] },
+            testMatch: /golden\.spec\.ts/,
+          },
+        ]
+      : []),
   ],
 });

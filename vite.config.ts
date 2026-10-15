@@ -40,7 +40,7 @@ export default defineConfig({
     },
   },
   preview: {
-    port: 4173,
+    port: 4181,
     strictPort: true,
   },
 });

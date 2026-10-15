@@ -22,14 +22,15 @@ interface Item {
 }
 
 const last = (re: RegExp, out: string, fallback = ''): string => {
-  const m = [...out.matchAll(re)];
+  const global = new RegExp(re.source, re.flags.includes('g') ? re.flags : `${re.flags}g`);
+  const m = [...out.matchAll(global)];
   return m.length > 0 ? (m[m.length - 1]?.[0] ?? fallback) : fallback;
 };
 
 const P00: Item[] = [
   { id: 'G1', gate: 'Every command in MASTER 13.1 exists, is real and passes (verify:fast)', cmd: ['node', 'tools/verify-fast.ts'], evidence: (o) => last(/verify:fast .*$/m, o) },
   { id: 'G2', gate: 'Golden replay identical across three Node runs, stubbed worker, 30/60/120/144 Hz and 0.01x/1x/100x; snapshot at tick 300', cmd: ['npx', 'vitest', 'run', '--project', 'golden'], evidence: (o) => last(/Tests\s+\d+ passed.*$/m, o) + '; ' + last(/inert performance\.now.*$/m, o) },
-  { id: 'G2b', gate: 'Golden replay identical in Chromium, WebKit and Firefox through Playwright', cmd: ['npx', 'playwright', 'test', 'tests/e2e/golden.spec.ts'], evidence: (o) => last(/\d+ passed.*$/m, o) + (existsSync('reports/engines.json') ? ' ' + readFileSync('reports/engines.json', 'utf8').replace(/\s+/g, ' ').slice(0, 600) : '') },
+  { id: 'G2b', gate: 'Golden replay identical in Chromium, WebKit and Firefox through Playwright', cmd: ['npx', 'playwright', 'test', 'tests/e2e/golden.spec.ts'], evidence: (o) => last(/\d+ passed.*$/m, o) + (existsSync('reports/engines.json') ? '; engines: ' + Object.entries(JSON.parse(readFileSync('reports/engines.json', 'utf8')) as Record<string, Record<string, unknown>>).map(([k, v]) => `${k} ${v['matchesGolden'] === true ? 'matches' : v['browserHash'] === v['nodeHash'] ? 'matches' : 'DIFFERS'}`).join(', ') : '') + (process.platform === 'darwin' && process.env['PS_FIREFOX'] !== '1' ? '; firefox not run on macOS (ADR 0009), CI covers it' : '') },
   { id: 'G3', gate: 'Lint blocks Math.random, Date.now, Math.sin, Math.tanh, ** and non-allowlisted imports in src/sim (tests prove each rule fires)', cmd: ['npx', 'vitest', 'run', '--project', 'unit', 'tests/unit/lint-rules.test.ts'], evidence: (o) => last(/Tests\s+\d+ passed.*$/m, o) },
   { id: 'G4', gate: 'Every dmath function within 2 ulp over a million samples', cmd: ['npx', 'vitest', 'run', '--project', 'dmath-full'], evidence: (o) => [...o.matchAll(/dmath\.\w+ samples=\d+ maxUlp=[\d.]+/g)].map((m) => m[0].replace('dmath.', '').replace(' samples=1000000', '')).join('; ') || last(/Tests\s+\d+ (passed|failed).*$/m, o), long: true },
   { id: 'G5', gate: 'Validation benches (M1) within tolerance with negative controls', cmd: ['npx', 'vitest', 'run', '--project', 'validation'], evidence: (o) => last(/M1 expected.*$/m, o) + '; ' + last(/Tests\s+\d+ passed.*$/m, o) },

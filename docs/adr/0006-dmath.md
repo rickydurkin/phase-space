@@ -23,3 +23,5 @@ Decision: dmath is the only source of transcendental functions in src/sim; lint 
 Consequences: V8's Math on Apple Silicon differs from dmath by 1 to 2 ulp on some inputs (fused multiply-add); golden hashes therefore depend on dmath, never on Math, which is the point.
 
 Verification: `npm run test:unit` (fast sample), `npm run test:dmath:full` (gate), `node tools/spikes/s5-dmath-cost.ts`.
+
+Addendum (15/10/2026, after the million-sample runs): 18 of 19 functions passed on the first run (worst cases: atan2 1.43 ulp, sin 0.83, tan 0.85, acos 0.89, asin 0.85, log 0.78, log10 0.58, log2 0.54). tanh failed on 3 samples at 2.04 ulp near |x| = 0.55 with fdlibm's -t/(t+2) form, and after adopting musl's split at log(3)/2 and log(5/3)/2 failed again on 2 samples at 2.03 ulp near |x| = 0.22: both expm1-based forms amplify expm1's own error below log(5/3)/2 (measured 2.1 to 2.2 ulp on 1 in 10,000 inputs there). The small range now uses an 11-term Taylor series in x^2 (0.57 ulp worst on 60,000 samples), so dmath.tanh is a hybrid of fdlibm, musl and a series rather than a pure port. The dmath-full project is the arbiter; the final results are in docs/phases/P00-report.md.

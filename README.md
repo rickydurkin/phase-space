@@ -12,4 +12,4 @@ npm run verify:fast
 npm run build:test && npm run preview
 ```
 
-Then open http://localhost:4173/ in Chrome or Safari. Press R to replay the run and compare hashes.
+Then open http://localhost:4181/ in Chrome or Safari. Press R to replay the run and compare hashes.

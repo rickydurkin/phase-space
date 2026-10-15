@@ -14,7 +14,7 @@ Deterministic 3D multi-physics sandbox for the browser. The full programme is in
 - `npm run test:e2e`, `test:e2e:smoke`, `test:visual`, `test:soak` Playwright (SwiftShader flags in playwright.config.ts).
 - `npm run perf:mac` real-GPU performance on Ricky's Mac; writes docs/BASELINE.md.
 - `npm run gate P00` phase gate report; `npm run gate P00 review` for reviewers.
-- `npm run dev`, `npm run build`, `npm run build:test` (window.__ps test API), `npm run preview` (port 4173).
+- `npm run dev`, `npm run build`, `npm run build:test` (window.__ps test API), `npm run preview` (port 4181).
 - `node tools/golden.ts --write <scene>` regenerate a golden file (only with a physicsVersion bump).
 
 ## Rules digest (MASTER section 2; the file is the authority)
