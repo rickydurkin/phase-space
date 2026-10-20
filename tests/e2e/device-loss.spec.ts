@@ -38,7 +38,7 @@ test('WebGPU device loss recovers with the simulation state intact', async ({ pa
   expectCleanConsole(c);
 });
 
-test('GPU process crash through the DevTools protocol does not break the page', async ({ page, browser, browserName }) => {
+test('D-001: GPU process crash through the DevTools protocol leaves no unhandled rejection and the state intact', async ({ page, browser, browserName }) => {
   test.skip(browserName !== 'chromium', 'CDP is Chromium only');
   const c = watchConsole(page);
   await bootGame(page);
@@ -52,7 +52,7 @@ test('GPU process crash through the DevTools protocol does not break the page', 
   const after = await page.evaluate(() => (window.__ps as TestApi).getState());
   expect(after.hash).toBe(before.hash);
   expect(await page.evaluate(() => (window.__ps as TestApi).errors())).toEqual([]);
-  // Chromium itself reports the instance loss when its GPU process is killed on purpose here, and
-  // three.js's pending popErrorScope promise rejects unhandled (docs/DEFECTS.md D-001).
-  expectCleanConsole(c, [/A valid external Instance reference no longer exists/], [/Instance dropped in popErrorScope/]);
+  // Chromium itself warns about the instance loss when its GPU process is killed on purpose here.
+  // Since D-001 is fixed, no page error is tolerated.
+  expectCleanConsole(c, [/A valid external Instance reference no longer exists/]);
 });

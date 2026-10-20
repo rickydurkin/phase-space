@@ -108,6 +108,8 @@ export class SceneRenderer {
   private meshes = new Map<number, Mesh>();
   private disposables: Array<{ dispose(): void }> = [];
   private lost = false;
+  /** Error-scope checks that were pending when the GPU instance went away (D-001). */
+  private droppedErrorChecks = 0;
   private disposed = false;
   private readonly pa = new Vector3();
   private readonly pb = new Vector3();
@@ -276,10 +278,35 @@ export class SceneRenderer {
     const backend = renderer.backend as unknown as BackendInternals;
     const device = backend.isWebGPUBackend === true ? backend.device : null;
     if (device === null || device === undefined) return;
+    this.guardErrorScopes(device);
     void device.lost.then((info) => {
       if (this.renderer !== renderer) return; // already replaced
       void this.recover(`${info.message || 'unknown reason'}${info.reason ? ` (${info.reason})` : ''}`);
     });
+  }
+
+  /**
+   * D-001: when the GPU process dies, every pending popErrorScope promise rejects
+   * with 'OperationError: Instance dropped in popErrorScope'. three.js 0.186 calls
+   * device.popErrorScope().then(...) without a rejection handler when it creates
+   * pipelines, so a pipeline in flight at the moment of the crash became an
+   * unhandled rejection in the error overlay. That rejection is a consequence of
+   * the device loss handled by recover(), so on this device it resolves to null
+   * and is counted; the count goes into the recovery note. Every other rejection
+   * passes through unchanged.
+   */
+  private guardErrorScopes(device: GPUDevice): void {
+    const pop = device.popErrorScope.bind(device);
+    device.popErrorScope = (): Promise<GPUError | null> =>
+      pop().catch((e: unknown) => {
+        const name = typeof e === 'object' && e !== null ? (e as { name?: unknown }).name : undefined;
+        const message = typeof e === 'object' && e !== null ? String((e as { message?: unknown }).message) : '';
+        if (name === 'OperationError' && /Instance dropped/i.test(message)) {
+          this.droppedErrorChecks++;
+          return null;
+        }
+        throw e;
+      });
   }
 
   private recovering: Promise<void> | null = null;
@@ -310,7 +337,10 @@ export class SceneRenderer {
       this.watchDevice(fresh);
       this.lost = false;
       this.recovering = null;
-      this.onDeviceLost(`GPU device lost: recovered (${reason}${disposeNote})`);
+      const dropped =
+        this.droppedErrorChecks > 0 ? `; ${this.droppedErrorChecks} pending GPU error checks dropped with the old device` : '';
+      this.droppedErrorChecks = 0;
+      this.onDeviceLost(`GPU device lost: recovered (${reason}${disposeNote}${dropped})`);
     })();
     return this.recovering;
   }
