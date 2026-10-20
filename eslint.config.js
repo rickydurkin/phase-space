@@ -10,6 +10,7 @@ export default tseslint.config(
       'dist/**',
       'dist-test/**',
       'dist-spike-*/**',
+      'dist-pane/**',
       'node_modules/**',
       'programme/**',
       'reports/**',

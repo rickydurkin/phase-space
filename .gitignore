@@ -13,3 +13,4 @@ reports/*
 !reports/perf-mac.json
 !reports/engines.json
 dist-spike-s3/
+dist-pane/
