@@ -19,11 +19,21 @@ import {
   FRAME_AS_STEP_MS,
   FRAME_BODY_COUNT,
 } from './protocol.ts';
-import type { BodyDescriptor, FrameResult, SimState, ReplayCheck } from './protocol.ts';
+import type { BodyDescriptor, FrameResult, SimState, ReplayCheck, ReplayStart, ReplayProgress } from './protocol.ts';
 
 const HASH_EVERY = 60;
 const MAX_TICKS_PER_FRAME = 48;
 const POSE_FIELDS = ['px', 'py', 'pz', 'qx', 'qy', 'qz', 'qw'] as const;
+/** A visible replay plays this many wall seconds at the current time scale, then fast-forwards (D-003). */
+const VISIBLE_REPLAY_SECONDS = 4;
+/** Fast-forward speed of a visible replay, in ticks per rendered frame. */
+const FAST_FORWARD_TICKS_PER_FRAME = 20_000;
+
+interface ReplayRun {
+  readonly originalHash: string;
+  readonly target: number;
+  wallSeconds: number;
+}
 
 function parseReplay(replayJson: string | ReplayFile): ReplayFile {
   const value: unknown = typeof replayJson === 'string' ? JSON.parse(replayJson) : replayJson;
@@ -58,7 +68,12 @@ export class SimWorker {
   private alpha = 0;
   private belowRealTime = false;
   private lastHash = '';
+  private lastHashTick = 0;
   private lastStepMs = 0;
+  private replayRun: ReplayRun | null = null;
+  /** Test builds only (D-009 tests): extra wall time spent in each running frame call. */
+  private frameDelayMs = 0;
+  private replayDone: ReplayCheck | null = null;
 
   private get active(): Simulation {
     if (this.sim === null) throw new Error('no scene loaded; call load(sceneId, seed) first');
@@ -76,6 +91,8 @@ export class SimWorker {
     this.alpha = 0;
     this.belowRealTime = false;
     this.lastStepMs = 0;
+    this.replayRun = null;
+    this.replayDone = null;
 
     const bodies: BodyDescriptor[] = [];
     this.bodyIds = [];
@@ -95,6 +112,7 @@ export class SimWorker {
     this.capture(this.curr);
     this.prev.set(this.curr);
     this.lastHash = sim.hash();
+    this.lastHashTick = sim.tick;
     return bodies;
   }
 
@@ -106,13 +124,26 @@ export class SimWorker {
     const sim = this.active;
     const clock = this.clock as FrameClock;
     const t0 = performance.now();
+    if (!this.paused && this.frameDelayMs > 0) {
+      // Simulates an AS that cannot keep up; time passes, state does not change.
+      const until = t0 + this.frameDelayMs;
+      while (performance.now() < until) {
+        // busy wait (worker thread only)
+      }
+    }
     if (!this.paused) {
-      const step = clock.advance(frameSeconds, this.timeScale);
-      this.alpha = step.alpha;
-      this.belowRealTime = step.belowRealTime;
-      this.runTicks(step.ticks);
+      if (this.replayRun !== null) {
+        this.advanceReplay(frameSeconds);
+      } else {
+        const step = clock.advance(frameSeconds, this.timeScale);
+        this.alpha = step.alpha;
+        this.belowRealTime = step.belowRealTime;
+        this.runTicks(step.ticks);
+      }
     } else {
       this.belowRealTime = false;
+      // While paused the HUD shows the exact hash of the current tick (cheap: it is computed once).
+      if (this.lastHashTick !== sim.tick) this.setHash(sim);
     }
     this.lastStepMs = performance.now() - t0;
 
@@ -132,7 +163,92 @@ export class SimWorker {
         buffer[o + 8 + k] = this.curr[i * 7 + k] as number;
       }
     }
-    return Comlink.transfer({ buffer, hash: this.lastHash }, [buffer.buffer]);
+    let replay: ReplayProgress | null = null;
+    if (this.replayRun !== null) {
+      replay = { state: 'running', tick: sim.tick, target: this.replayRun.target };
+    } else if (this.replayDone !== null) {
+      replay = { state: 'done', check: this.replayDone };
+      this.replayDone = null; // reported once
+    }
+    const result: FrameResult = { buffer, hash: this.lastHash, hashTick: this.lastHashTick, replay };
+    return Comlink.transfer(result, [buffer.buffer]);
+  }
+
+  /**
+   * Start a visible replay (D-003): rebuild the run from its scene, seed and
+   * input log, then play it from tick 0 through frame(): the first few wall
+   * seconds at the current time scale so the motion can be watched, then fast
+   * forward. At the tick where the replay started it compares its hash with
+   * the original run's hash at that same tick and reports the result once as
+   * frame().replay = { state: 'done' }. The replayed run then continues as the
+   * live run, so nothing jumps.
+   */
+  async startReplay(): Promise<ReplayStart> {
+    if (this.replayRun !== null) throw new Error('a replay is already running');
+    const sim = this.active;
+    const originalHash = sim.hash();
+    const target = sim.tick;
+    const inputs = [...sim.inputs];
+    const fresh = await Simulation.create(getScene(this.sceneId), { seed: this.seed, dt: sim.info.dt });
+    for (const cmd of inputs) fresh.queueInput(cmd);
+    this.sim = fresh;
+    this.clock?.reset();
+    this.alpha = 0;
+    this.belowRealTime = false;
+    this.capture(this.curr);
+    this.prev.set(this.curr);
+    this.setHash(fresh);
+    this.replayDone = null;
+    this.replayRun = { originalHash, target, wallSeconds: 0 };
+    if (target === 0) this.finishReplay();
+    return { originalHash, targetTick: target };
+  }
+
+  private advanceReplay(frameSeconds: number): void {
+    const run = this.replayRun as ReplayRun;
+    const sim = this.active;
+    const clock = this.clock as FrameClock;
+    run.wallSeconds += frameSeconds;
+    const remaining = run.target - sim.tick;
+    let ticks: number;
+    if (run.wallSeconds <= VISIBLE_REPLAY_SECONDS) {
+      const step = clock.advance(frameSeconds, this.timeScale);
+      this.alpha = step.alpha;
+      ticks = Math.min(step.ticks, remaining);
+    } else {
+      this.alpha = 1;
+      ticks = Math.min(remaining, FAST_FORWARD_TICKS_PER_FRAME);
+    }
+    this.belowRealTime = false; // fast-forwarding is deliberate, not lost time
+    this.runTicks(ticks);
+    if (sim.tick >= run.target) this.finishReplay();
+  }
+
+  private finishReplay(): void {
+    const run = this.replayRun;
+    if (run === null) return;
+    const sim = this.active;
+    this.setHash(sim);
+    this.replayDone = {
+      originalHash: run.originalHash,
+      replayHash: this.lastHash,
+      matches: this.lastHash === run.originalHash,
+      ticks: run.target,
+    };
+    this.replayRun = null;
+    this.alpha = 0;
+    this.prev.set(this.curr);
+    this.clock?.reset();
+  }
+
+  private setHash(sim: Simulation): void {
+    this.lastHash = sim.hash();
+    this.lastHashTick = sim.tick;
+  }
+
+  /** Test hook (D-009): spend this many extra milliseconds in every running frame call. */
+  setFrameDelay(ms: number): void {
+    this.frameDelayMs = Math.max(0, ms);
   }
 
   setTimeScale(x: number): void {
@@ -157,12 +273,15 @@ export class SimWorker {
   /** Run exactly n ticks regardless of the clock (tests and stepping). Returns the new tick. */
   step(n: number): number {
     const sim = this.active;
-    const count = Math.max(0, Math.floor(n));
+    let count = Math.max(0, Math.floor(n));
+    if (this.replayRun !== null) count = Math.min(count, this.replayRun.target - sim.tick);
     const t0 = performance.now();
     this.runTicks(count);
     this.lastStepMs = performance.now() - t0;
     this.alpha = 0;
     this.clock?.reset();
+    if (this.replayRun !== null && sim.tick >= this.replayRun.target) this.finishReplay();
+    else this.setHash(sim);
     return sim.tick;
   }
 
@@ -203,7 +322,8 @@ export class SimWorker {
     this.prev.set(this.curr);
     this.alpha = 0;
     this.clock?.reset();
-    this.lastHash = sim.hash();
+    this.replayRun = null;
+    this.setHash(sim);
   }
 
   /** Re-run a replay file (JSON text or object) and return the hashes it produces now. */
@@ -235,7 +355,7 @@ export class SimWorker {
     for (let i = 0; i < n; i++) {
       if (i === n - 1) this.capture(this.prev);
       sim.step();
-      if (sim.tick % HASH_EVERY === 0) this.lastHash = sim.hash();
+      if (sim.tick % HASH_EVERY === 0) this.setHash(sim);
     }
     this.capture(this.curr);
   }

@@ -10,9 +10,13 @@ export interface HudData {
   readonly tick: number;
   readonly simTime: number;
   readonly hash: string;
+  /** The tick the hash belongs to (D-003). */
+  readonly hashTick: number;
   readonly backend: string;
   readonly timeScale: number;
   readonly belowRealTime: boolean;
+  /** Simulated seconds achieved per simulated second requested, shown with the badge (D-009). */
+  readonly achievedRatio: number | null;
   readonly paused: boolean;
 }
 
@@ -42,7 +46,7 @@ export class Hud {
     this.row('as-ms', 'AS step');
     this.row('tick', 'tick');
     this.row('sim-time', 'sim time');
-    this.row('hash', 'hash');
+    this.row('hash', 'hash at tick');
     this.row('backend', 'backend');
     this.row('time-scale', 'time scale');
 
@@ -75,10 +79,16 @@ export class Hud {
     this.set('as-ms', `${d.asMs.toFixed(2)} ms`);
     this.set('tick', String(d.tick));
     this.set('sim-time', `${d.simTime.toFixed(2)} s`);
-    this.set('hash', d.hash === '' ? '-' : d.hash);
+    this.set('hash', d.hash === '' ? '-' : `${d.hash} @ ${d.hashTick}`);
     this.set('backend', d.backend);
     this.set('time-scale', d.paused ? `${formatScale(d.timeScale)} (paused)` : formatScale(d.timeScale));
     this.badge.hidden = !d.belowRealTime;
+    if (d.belowRealTime) {
+      this.badge.textContent =
+        d.achievedRatio === null
+          ? 'running below real time'
+          : `running below real time: ${formatScale(d.achievedRatio * d.timeScale)} of ${formatScale(d.timeScale)}`;
+    }
   }
 
   setReplayStatus(text: string, state: ReplayState): void {
@@ -114,5 +124,6 @@ export class Hud {
 
 function formatScale(x: number): string {
   if (x >= 1) return `${Number.isInteger(x) ? x : x.toFixed(2)}x`;
+  if (x >= 0.1) return `${x.toFixed(2)}x`;
   return `1/${(1 / x).toFixed(0)}x`;
 }

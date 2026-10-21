@@ -41,9 +41,23 @@ export const FRAME_BODY_COUNT = 5;
 
 export interface FrameResult {
   readonly buffer: Float64Array;
-  /** Latest hash taken every 60 ticks (16 hex characters). */
+  /** Latest state hash (16 hex characters): every 60 ticks while running, exact while paused. */
   readonly hash: string;
+  /** The tick that hash belongs to (D-003: the HUD says which tick it shows). */
+  readonly hashTick: number;
+  /** Progress of a visible replay started with startReplay(), or null. "done" is reported once. */
+  readonly replay: ReplayProgress | null;
 }
+
+/** Answer to startReplay(): the original run's hash at the tick where the replay will stop. */
+export interface ReplayStart {
+  readonly originalHash: string;
+  readonly targetTick: number;
+}
+
+export type ReplayProgress =
+  | { readonly state: 'running'; readonly tick: number; readonly target: number }
+  | { readonly state: 'done'; readonly check: ReplayCheck };
 
 export interface BodyState {
   readonly id: number;

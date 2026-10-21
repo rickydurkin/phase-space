@@ -27,6 +27,10 @@ export interface TestApiBackend {
   pause(): Promise<void>;
   play(): Promise<void>;
   replay(): Promise<ReplayCheck>;
+  /** What R does: replay visibly from the start and compare at the current tick (D-003). */
+  replayVisible(): Promise<ReplayCheck>;
+  /** Make every running worker frame take this many extra milliseconds (D-009 tests). */
+  slowAs(ms: number): Promise<void>;
   readPixels(x: number, y: number, w: number, h: number): Promise<Uint8Array>;
   crashGpu(options?: CrashOptions): boolean;
   backend(): string;
@@ -46,6 +50,10 @@ export interface TestApi {
   pause(): Promise<void>;
   play(): Promise<void>;
   replay(): Promise<ReplayCheck>;
+  /** What R does: replay visibly from the start and compare at the current tick (D-003). */
+  replayVisible(): Promise<ReplayCheck>;
+  /** Make every running worker frame take this many extra milliseconds (D-009 tests). */
+  slowAs(ms: number): Promise<void>;
   readPixels(x: number, y: number, w: number, h: number): Promise<Uint8Array>;
   crashGpu(options?: CrashOptions): Promise<boolean>;
   backend(): string;
@@ -82,6 +90,8 @@ export function installTestApi(ready: Promise<void>, errors: () => string[]): (b
     pause: async () => (await get()).pause(),
     play: async () => (await get()).play(),
     replay: async () => (await get()).replay(),
+    replayVisible: async () => (await get()).replayVisible(),
+    slowAs: async (ms) => (await get()).slowAs(ms),
     readPixels: async (x, y, w, h) => (await get()).readPixels(x, y, w, h),
     crashGpu: async (options) => (await get()).crashGpu(options),
     backend: () => impl?.backend() ?? 'not ready',

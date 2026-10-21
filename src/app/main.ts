@@ -11,7 +11,8 @@ import { installTestApi } from './test-api.ts';
 import type { TestApiBackend } from './test-api.ts';
 import type { SimWorker } from './sim-worker.ts';
 import { FRAME_TICK, FRAME_SIM_TIME, FRAME_BELOW_REAL_TIME, FRAME_AS_STEP_MS } from './protocol.ts';
-import type { ReplayCheck } from './protocol.ts';
+import type { ReplayCheck, FrameResult, ReplayProgress } from './protocol.ts';
+import { RealTimeMonitor } from './realtime.ts';
 
 const SCENE_ID = 'cube-drop';
 const SEED = 1;
@@ -56,12 +57,23 @@ async function boot(): Promise<void> {
   let timeScale = 1;
   let latest: Float64Array | null = null;
   let latestHash = '';
+  let latestHashTick = 0;
   let fps = 0;
   let asMs = 0;
   let pendingSeconds = 0;
   let frameInFlight = false;
   let simFailed = false;
   let replayInFlight: Promise<ReplayCheck> | null = null;
+  /** A visible replay started with R (D-003), resolved when the worker reports it done. */
+  let visibleReplay: {
+    readonly wasPaused: boolean;
+    readonly promise: Promise<ReplayCheck>;
+    readonly resolve: (check: ReplayCheck) => void;
+    readonly reject: (reason: unknown) => void;
+  } | null = null;
+  const realTime = new RealTimeMonitor();
+  let monitorWall = performance.now() / 1000;
+  let monitorSim = 0;
 
   overlay.setContext({
     backend: () => renderer.backend,
@@ -119,13 +131,71 @@ async function boot(): Promise<void> {
     return replayInFlight;
   };
 
+  /**
+   * R (D-003): rebuild the run from its seed and inputs and play it again from
+   * the start, visibly, up to the tick where R was pressed; there the worker
+   * compares the replay's hash with the original run's hash at that same tick.
+   */
+  const startVisibleReplay = (): Promise<ReplayCheck> => {
+    if (visibleReplay !== null) return visibleReplay.promise;
+    let resolve: (check: ReplayCheck) => void = () => undefined;
+    let reject: (reason: unknown) => void = () => undefined;
+    const promise = new Promise<ReplayCheck>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    visibleReplay = { wasPaused: paused, promise, resolve, reject };
+    hud.setReplayStatus('replaying from the start...', 'busy');
+    realTime.reset();
+    (async () => {
+      const start = await host.startReplay();
+      hud.setReplayStatus(`replaying: tick 0 of ${start.targetTick}`, 'busy');
+      await setPaused(false);
+    })().catch((err: unknown) => {
+      const r = visibleReplay;
+      visibleReplay = null;
+      hud.setReplayStatus('replay failed: see the error report', 'bad');
+      r?.reject(err);
+    });
+    return promise;
+  };
+
+  const onReplayProgress = (p: ReplayProgress | null): void => {
+    if (p === null) return;
+    if (p.state === 'running') {
+      hud.setReplayStatus(`replaying: tick ${p.tick} of ${p.target}`, 'busy');
+      return;
+    }
+    const c = p.check;
+    if (c.matches) {
+      hud.setReplayStatus(`replay matches the original run at tick ${c.ticks}: ${c.replayHash}`, 'ok');
+    } else {
+      hud.setReplayStatus(`REPLAY MISMATCH at tick ${c.ticks}: original ${c.originalHash}, replay ${c.replayHash}`, 'bad');
+    }
+    const r = visibleReplay;
+    visibleReplay = null;
+    if (r !== null) {
+      if (r.wasPaused) void setPaused(true);
+      r.resolve(c);
+    }
+  };
+
+  /** Every frame result goes through here, whether the loop or the test API asked for it. */
+  const applyFrameResult = (result: FrameResult): void => {
+    latest = result.buffer;
+    latestHash = result.hash;
+    latestHashTick = result.hashTick;
+    asMs = result.buffer[FRAME_AS_STEP_MS] ?? 0;
+    onReplayProgress(result.replay);
+  };
+
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.code === 'Space') {
       e.preventDefault();
       void setPaused(!paused);
     } else if (e.key === 'r' || e.key === 'R') {
-      replay().catch((err: unknown) => overlay.report(err, 'replay'));
+      startVisibleReplay().catch((err: unknown) => overlay.report(err, 'replay'));
     }
   });
 
@@ -143,9 +213,7 @@ async function boot(): Promise<void> {
       pendingSeconds = 0;
       host.frame(seconds).then(
         (result) => {
-          latest = result.buffer;
-          latestHash = result.hash;
-          asMs = result.buffer[FRAME_AS_STEP_MS] ?? 0;
+          applyFrameResult(result);
           frameInFlight = false;
         },
         (err: unknown) => {
@@ -163,15 +231,24 @@ async function boot(): Promise<void> {
 
     if (now - lastHud >= HUD_INTERVAL_MS) {
       lastHud = now;
+      // D-009: compare simulated time with wall time, whatever the cause of lost time.
+      const simNow = latest?.[FRAME_SIM_TIME] ?? 0;
+      const wallNow = now / 1000;
+      const active = !paused && visibleReplay === null && !simFailed && !document.hidden;
+      realTime.push(wallNow - monitorWall, simNow - monitorSim, timeScale, active);
+      monitorWall = wallNow;
+      monitorSim = simNow;
       hud.update({
         fps,
         asMs,
         tick: latest?.[FRAME_TICK] ?? 0,
-        simTime: latest?.[FRAME_SIM_TIME] ?? 0,
+        simTime: simNow,
         hash: latestHash,
+        hashTick: latestHashTick,
         backend: renderer.backend,
         timeScale,
-        belowRealTime: (latest?.[FRAME_BELOW_REAL_TIME] ?? 0) === 1,
+        belowRealTime: realTime.belowRealTime || (latest?.[FRAME_BELOW_REAL_TIME] ?? 0) === 1,
+        achievedRatio: realTime.hasEstimate ? realTime.achievedRatio : null,
         paused,
       });
     }
@@ -185,8 +262,7 @@ async function boot(): Promise<void> {
     // last frame the loop happened to draw.
     const syncFrame = async (): Promise<void> => {
       const result = await host.frame(0);
-      latest = result.buffer;
-      latestHash = result.hash;
+      applyFrameResult(result);
       renderer.applyFrame(result.buffer);
     };
     const backend: TestApiBackend = {
@@ -199,6 +275,13 @@ async function boot(): Promise<void> {
         const list = await host.load(sceneId, seed);
         renderer.setBodies(list);
         latestHash = '';
+        latestHashTick = 0;
+        realTime.reset();
+        monitorSim = 0;
+        if (visibleReplay !== null) {
+          visibleReplay.reject(new Error('scene reloaded during a replay'));
+          visibleReplay = null;
+        }
         hud.setReplayStatus('press R to replay', 'idle');
         await syncFrame();
       },
@@ -211,10 +294,13 @@ async function boot(): Promise<void> {
       setTimeScale: async (x) => {
         await host.setTimeScale(x);
         timeScale = x;
+        realTime.reset();
       },
       pause: () => setPaused(true),
       play: () => setPaused(false),
       replay,
+      replayVisible: startVisibleReplay,
+      slowAs: (ms) => host.setFrameDelay(ms),
       readPixels: async (x, y, w, h) => {
         await syncFrame();
         return renderer.readPixels(x, y, w, h);
