@@ -9,7 +9,6 @@
 import * as Comlink from 'comlink';
 import { Simulation, FrameClock, Pose, getScene, runScene, runReplay } from '../sim/index.ts';
 import type { InputCommand, ReplayFile, ReplayResult } from '../sim/index.ts';
-import { ReplayFileSchema } from '../content/schemas/replay.ts';
 import {
   FRAME_HEADER,
   FRAME_BODY_STRIDE,
@@ -36,15 +35,28 @@ interface ReplayRun {
   wallSeconds: number;
 }
 
-/** Replay files cross a trust boundary (files, share links, the test API): validate with the schema (MASTER 5.5). */
+/**
+ * Structural check only: replay files are validated against the zod schema on the
+ * main thread where they enter the app (src/app/replay-validate.ts), which keeps
+ * zod out of this worker chunk.
+ */
 function parseReplay(replayJson: string | ReplayFile): ReplayFile {
   const value: unknown = typeof replayJson === 'string' ? JSON.parse(replayJson) : replayJson;
-  const parsed = ReplayFileSchema.safeParse(value);
-  if (!parsed.success) {
-    const issues = parsed.error.issues.slice(0, 5).map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`);
-    throw new Error(`invalid replay file: ${issues.join('; ')}`);
+  if (typeof value !== 'object' || value === null) throw new Error('replay must be a JSON object');
+  const r = value as Partial<ReplayFile>;
+  if (
+    typeof r.format !== 'number' ||
+    typeof r.seed !== 'number' ||
+    typeof r.ticks !== 'number' ||
+    typeof r.hashEvery !== 'number' ||
+    typeof r.scene !== 'object' ||
+    r.scene === null ||
+    !Array.isArray(r.inputs) ||
+    !Array.isArray(r.hashes)
+  ) {
+    throw new Error('replay is missing format, scene, seed, ticks, hashEvery, inputs or hashes');
   }
-  return parsed.data as ReplayFile;
+  return r as ReplayFile;
 }
 
 export class SimWorker {

@@ -5,6 +5,7 @@
 
 import * as Comlink from 'comlink';
 import type { SimWorker } from './sim-worker.ts';
+import { parseReplayFile } from './replay-validate.ts';
 import type { ReplayFile, ReplayResult } from '../sim/index.ts';
 
 export interface ReplayHarness {
@@ -49,7 +50,7 @@ const harness: ReplayHarness = {
   ready,
   async run(replayJson) {
     await ready;
-    const result = await host.runReplay(replayJson);
+    const result = await host.runReplay(parseReplayFile(replayJson));
     const id = typeof replayJson === 'string' ? (JSON.parse(replayJson) as ReplayFile).scene.id : replayJson.scene.id;
     log(`replay ${id} ticks ${result.ticks}: ${result.finalHash}`);
     return result;

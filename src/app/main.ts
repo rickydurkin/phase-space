@@ -13,6 +13,7 @@ import type { SimWorker } from './sim-worker.ts';
 import { FRAME_TICK, FRAME_SIM_TIME, FRAME_BELOW_REAL_TIME, FRAME_AS_STEP_MS } from './protocol.ts';
 import type { ReplayCheck, FrameResult, ReplayProgress } from './protocol.ts';
 import { RealTimeMonitor } from './realtime.ts';
+import { parseReplayFile } from './replay-validate.ts';
 
 const SCENE_ID = 'cube-drop';
 const SEED = 1;
@@ -290,7 +291,7 @@ async function boot(): Promise<void> {
       },
       getState: () => host.getState(),
       hash: () => host.hash(),
-      runReplay: (json) => host.runReplay(json),
+      runReplay: (json) => host.runReplay(parseReplayFile(json)),
       setTimeScale: async (x) => {
         await host.setTimeScale(x);
         timeScale = x;
