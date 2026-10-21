@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-15T22:20:46.576Z",
+  "date": "2026-10-21T02:38:31.965Z",
   "machine": "Apple M4 Max",
   "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "backend": "WebGPU",
@@ -9,16 +9,21 @@
       "scene": "cube-drop",
       "tier": "Ultra (P00: single tier)",
       "backend": "WebGPU",
-      "frames": 962,
+      "frames": 961,
       "frameMs": {
-        "p50": 8.300000011920929,
-        "p95": 8.700000047683716,
-        "p99": 9.299999952316284
+        "p50": 8.300000000745058,
+        "p95": 9.700000001117587,
+        "p99": 10.399999998509884
       },
-      "fps": 120.10190194636705,
-      "asMsPerFrame": 0,
-      "asMsPerSimulatedSecond": 0,
-      "tick": 984
+      "fps": 121.27548144008462,
+      "asMsPerFrame": 0.18886576483799503,
+      "asMsPerSimulatedSecond": 22.640332641494375,
+      "simulatedSeconds": 8.016666666666666,
+      "tick": 1085,
+      "frameBudgetMs": 8.3,
+      "overBudget": [
+        "frame p95 over 8.3 ms"
+      ]
     },
     {
       "scene": "stack-1000",
@@ -26,14 +31,17 @@
       "backend": "WebGPU",
       "frames": 961,
       "frameMs": {
-        "p50": 8.300000011920929,
-        "p95": 8.900000035762787,
-        "p99": 9.300000011920929
+        "p50": 8.300000000745058,
+        "p95": 9,
+        "p99": 10.199999999254942
       },
-      "fps": 120.11612885224515,
-      "asMsPerFrame": 1.399999976158142,
-      "asMsPerSimulatedSecond": 168.16257752935155,
-      "tick": 1083
+      "fps": 120.06561572936944,
+      "asMsPerFrame": 1.0534859521393969,
+      "asMsPerSimulatedSecond": 125.76397515601992,
+      "simulatedSeconds": 8.05,
+      "tick": 1082,
+      "frameBudgetMs": 16.7,
+      "overBudget": []
     }
   ]
 }

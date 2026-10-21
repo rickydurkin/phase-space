@@ -14,3 +14,4 @@ reports/*
 !reports/engines.json
 dist-spike-s3/
 dist-pane/
+!reports/engines-native.json

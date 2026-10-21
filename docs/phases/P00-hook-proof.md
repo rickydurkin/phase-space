@@ -47,3 +47,7 @@ PostToolUse on src/gpu/kernels/__hook_probe__.wgsl (invalid WGSL): exit 2
 post-edit hook: check failed for src/gpu/kernels/__hook_probe__.wgsl
 ERROR src/gpu/kernels/__hook_probe__.wgsl:3:7 cannot initialize 'let' of type 'f32' with value of type 'u32'
 ```
+
+## Skill (live session)
+
+21/10/2026: the agent invoked the project skill `run-game` with Claude Code's Skill tool. Claude Code loaded it from .claude/skills/run-game/SKILL.md ("Base directory for this skill: .../.claude/skills/run-game") and put its five steps in the agent's context. The agent followed them: `npm run build:test` built dist-test; `npx vite preview --outDir dist-test --port 4181 --strictPort` served it; the game was driven by hand through the built-in browser (the test API was present, backend WebGPU, hash c9c97c5c753b3917 at tick 300, equal to the golden file at tick 300, and the visible replay reported "replay matches the original run at tick 300"); the tab was closed and the server stopped. The other four skills (new-mission, new-bench, model-card, phase-gate) are listed by Claude Code as available in the same session.
