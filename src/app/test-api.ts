@@ -10,6 +10,17 @@ export interface CrashOptions {
   readonly failRecoveries?: number;
 }
 
+export interface AsTotals {
+  readonly ms: number;
+  readonly ticks: number;
+  readonly dt: number;
+}
+
+export interface GpuResources {
+  readonly geometries: number;
+  readonly textures: number;
+}
+
 export interface FrameStats {
   readonly fps: number;
   readonly asMs: number;
@@ -31,6 +42,10 @@ export interface TestApiBackend {
   replayVisible(): Promise<ReplayCheck>;
   /** Make every running worker frame take this many extra milliseconds (D-009 tests). */
   slowAs(ms: number): Promise<void>;
+  /** Live GPU resources (geometries and textures) for the soak test. */
+  gpuResources(): GpuResources;
+  /** AS milliseconds and ticks since the scene loaded (perf:mac). */
+  asTotals(): Promise<AsTotals>;
   readPixels(x: number, y: number, w: number, h: number): Promise<Uint8Array>;
   crashGpu(options?: CrashOptions): boolean;
   backend(): string;
@@ -54,6 +69,10 @@ export interface TestApi {
   replayVisible(): Promise<ReplayCheck>;
   /** Make every running worker frame take this many extra milliseconds (D-009 tests). */
   slowAs(ms: number): Promise<void>;
+  /** Live GPU resources (geometries and textures) for the soak test. */
+  gpuResources(): Promise<GpuResources>;
+  /** AS milliseconds and ticks since the scene loaded (perf:mac). */
+  asTotals(): Promise<AsTotals>;
   readPixels(x: number, y: number, w: number, h: number): Promise<Uint8Array>;
   crashGpu(options?: CrashOptions): Promise<boolean>;
   backend(): string;
@@ -92,6 +111,8 @@ export function installTestApi(ready: Promise<void>, errors: () => string[]): (b
     replay: async () => (await get()).replay(),
     replayVisible: async () => (await get()).replayVisible(),
     slowAs: async (ms) => (await get()).slowAs(ms),
+    gpuResources: async () => (await get()).gpuResources(),
+    asTotals: async () => (await get()).asTotals(),
     readPixels: async (x, y, w, h) => (await get()).readPixels(x, y, w, h),
     crashGpu: async (options) => (await get()).crashGpu(options),
     backend: () => impl?.backend() ?? 'not ready',

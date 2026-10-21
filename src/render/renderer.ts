@@ -265,6 +265,12 @@ export class SceneRenderer {
     }
   }
 
+  /** Live GPU resources, from three.js (soak test, D-006). */
+  resourceCounts(): { geometries: number; textures: number } {
+    const m = this.renderer.info.memory;
+    return { geometries: m.geometries, textures: m.textures };
+  }
+
   /** Destroy the WebGPU device to exercise device-loss recovery. Returns false on WebGL2. */
   crashDevice(): boolean {
     const device = this.device();

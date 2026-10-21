@@ -168,6 +168,11 @@ export class Simulation {
     this.inputLog.splice(i, 0, copy);
   }
 
+  /** Release the physics engine's memory. The simulation cannot be used afterwards. */
+  dispose(): void {
+    this.mechanics.dispose();
+  }
+
   /** Advance one tick in the documented order. */
   step(): void {
     const tick = this.tickCount;

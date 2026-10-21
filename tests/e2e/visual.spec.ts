@@ -4,8 +4,9 @@ import { bootGame, watchConsole, expectCleanConsole, readRegion, meanColour, can
 import type { TestApi } from '../../src/app/test-api.ts';
 
 // Reference-scene pixel readback first, screenshot second (MASTER 13.3), with
-// per-adapter baselines in tests/visual/baselines/. A missing baseline is
-// written on first run and must be committed.
+// per-adapter baselines in tests/visual/baselines/. A missing baseline fails the
+// test (D-008); to record one deliberately, run with PS_UPDATE_BASELINES=1 and commit
+// the file after looking at the screenshot in reports/visual/.
 const TOLERANCE = 12; // per channel, 0 to 255
 
 interface Baseline {
@@ -40,10 +41,13 @@ for (const variant of ['webgpu', 'webgl']) {
     const adapter = `${process.platform}-${process.env['PS_SWIFTSHADER'] === '1' || (process.platform !== 'darwin' && process.env['PS_REAL_GPU'] !== '1') ? 'swiftshader' : 'gpu'}`;
     const baselinePath = `tests/visual/baselines/cube-drop-120-${info.project.name}-${variant}-${adapter}.json`;
     const current: Baseline = { backend, regions };
-    if (!existsSync(baselinePath)) {
+    const recording = process.env['PS_UPDATE_BASELINES'] === '1';
+    if (recording) {
       mkdirSync('tests/visual/baselines', { recursive: true });
       writeFileSync(baselinePath, JSON.stringify(current, null, 2) + '\n');
-      console.log(`wrote new visual baseline ${baselinePath}`);
+      console.log(`recorded visual baseline ${baselinePath} (PS_UPDATE_BASELINES=1); review and commit it`);
+    } else if (!existsSync(baselinePath)) {
+      throw new Error(`no visual baseline ${baselinePath}: record one with PS_UPDATE_BASELINES=1, review the screenshot in reports/visual/ and commit it (D-008)`);
     } else {
       const base = JSON.parse(readFileSync(baselinePath, 'utf8')) as Baseline;
       for (const r of regions) {

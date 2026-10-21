@@ -32,7 +32,8 @@
     "gate": "node tools/gate.ts",
     "size:check": "node tools/size-check.js dist",
     "golden:write": "node tools/golden.ts --write",
-    "counts:update": "node tools/check-counts.ts --update"
+    "counts:update": "node tools/check-counts.ts --update",
+    "engines:mac": "node tools/engine-check.ts"
   },
   "dependencies": {
     "@dimforge/rapier3d-deterministic-compat": "0.21.0",

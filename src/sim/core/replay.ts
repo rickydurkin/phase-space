@@ -81,7 +81,8 @@ export async function runReplay(replay: ReplayFile): Promise<ReplayResult> {
   if (scene.version !== replay.scene.version) {
     throw new Error(`replay is for ${replay.scene.id} v${replay.scene.version}, scene is v${scene.version}`);
   }
-  const { result } = await runScene(scene, replay.seed, replay.ticks, replay.inputs, replay.hashEvery, replay.dt);
+  const { sim, result } = await runScene(scene, replay.seed, replay.ticks, replay.inputs, replay.hashEvery, replay.dt);
+  sim.dispose();
   return result;
 }
 

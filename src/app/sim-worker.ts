@@ -65,6 +65,9 @@ export class SimWorker {
   private replayRun: ReplayRun | null = null;
   /** Test builds only (D-009 tests): extra wall time spent in each running frame call. */
   private frameDelayMs = 0;
+  /** Running totals for perf:mac: AS milliseconds and ticks since the scene loaded. */
+  private totalAsMs = 0;
+  private totalTicks = 0;
   private replayDone: ReplayCheck | null = null;
 
   private get active(): Simulation {
@@ -76,6 +79,7 @@ export class SimWorker {
   async load(sceneId: string, seed: number): Promise<BodyDescriptor[]> {
     const scene = getScene(sceneId);
     const sim = await Simulation.create(scene, { seed });
+    this.sim?.dispose();
     this.sim = sim;
     this.sceneId = sceneId;
     this.seed = seed;
@@ -85,6 +89,8 @@ export class SimWorker {
     this.lastStepMs = 0;
     this.replayRun = null;
     this.replayDone = null;
+    this.totalAsMs = 0;
+    this.totalTicks = 0;
 
     const bodies: BodyDescriptor[] = [];
     this.bodyIds = [];
@@ -183,6 +189,7 @@ export class SimWorker {
     const inputs = [...sim.inputs];
     const fresh = await Simulation.create(getScene(this.sceneId), { seed: this.seed, dt: sim.info.dt });
     for (const cmd of inputs) fresh.queueInput(cmd);
+    sim.dispose();
     this.sim = fresh;
     this.clock?.reset();
     this.alpha = 0;
@@ -325,7 +332,8 @@ export class SimWorker {
 
   /** Run a scene by id with no inputs; the replay page uses this across engines. */
   async runSceneById(sceneId: string, seed: number, ticks: number, hashEvery = HASH_EVERY): Promise<ReplayResult> {
-    const { result } = await runScene(getScene(sceneId), seed, ticks, [], hashEvery);
+    const { sim, result } = await runScene(getScene(sceneId), seed, ticks, [], hashEvery);
+    sim.dispose();
     return result;
   }
 
@@ -337,18 +345,27 @@ export class SimWorker {
     const sim = this.active;
     const originalHash = sim.hash();
     const ticks = sim.tick;
-    const { result } = await runScene(getScene(this.sceneId), this.seed, ticks, sim.inputs, HASH_EVERY, sim.info.dt);
+    const { sim: check, result } = await runScene(getScene(this.sceneId), this.seed, ticks, sim.inputs, HASH_EVERY, sim.info.dt);
+    check.dispose();
     return { originalHash, replayHash: result.finalHash, matches: originalHash === result.finalHash, ticks };
+  }
+
+  /** AS cost so far: milliseconds spent stepping and ticks stepped (perf:mac). */
+  asTotals(): { ms: number; ticks: number; dt: number } {
+    return { ms: this.totalAsMs, ticks: this.totalTicks, dt: this.active.info.dt };
   }
 
   private runTicks(n: number): void {
     if (n <= 0) return;
     const sim = this.active;
+    const started = performance.now();
     for (let i = 0; i < n; i++) {
       if (i === n - 1) this.capture(this.prev);
       sim.step();
       if (sim.tick % HASH_EVERY === 0) this.setHash(sim);
     }
+    this.totalAsMs += performance.now() - started;
+    this.totalTicks += n;
     this.capture(this.curr);
   }
 

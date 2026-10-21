@@ -20,7 +20,7 @@ test('soak: random play for the configured minutes with a flat JS heap and a cle
     const { metrics } = await cdp.send('Performance.getMetrics');
     return metrics.find((m) => m.name === 'JSHeapUsedSize')?.value ?? 0;
   };
-  const samples: { t: number; heapMB: number; tick: number }[] = [];
+  const samples: { t: number; heapMB: number; tick: number; geometries: number; textures: number }[] = [];
   const end = Date.now() + MINUTES * 60_000;
   let seed = 1234;
   const rnd = (): number => {
@@ -40,29 +40,46 @@ test('soak: random play for the configured minutes with a flat JS heap and a cle
         ([tick, ix, iz]) => (window.__ps as TestApi).applyInputs([{ type: 'impulse', tick, entity: 2, ix, iy: 400, iz }]),
         [st.tick + 120, (rnd() - 0.5) * 600, (rnd() - 0.5) * 600] as const, // stamped a second ahead so the worker has not passed it
       );
-    } else if (r < 0.9) await page.evaluate(() => (window.__ps as TestApi).step(60));
-    else {
+    } else if (r < 0.88) await page.evaluate(() => (window.__ps as TestApi).step(60));
+    else if (r < 0.92) {
+      // What R does: a visible replay from the start (D-003).
+      const check = await page.evaluate(() => (window.__ps as TestApi).replayVisible());
+      expect(check.matches, `visible replay mismatch at ${JSON.stringify(check)}`).toBe(true);
+    } else {
       const check = await page.evaluate(() => (window.__ps as TestApi).replay());
       expect(check.matches, `replay mismatch at ${JSON.stringify(check)}`).toBe(true);
     }
     actions++;
     if (Date.now() >= nextSample) {
       const st = await page.evaluate(() => (window.__ps as TestApi).getState());
-      samples.push({ t: Math.round((Date.now() - (end - MINUTES * 60_000)) / 1000), heapMB: (await heap()) / 1048576, tick: st.tick });
+      const gpu = await page.evaluate(() => (window.__ps as TestApi).gpuResources());
+      samples.push({
+        t: Math.round((Date.now() - (end - MINUTES * 60_000)) / 1000),
+        heapMB: (await heap()) / 1048576,
+        tick: st.tick,
+        geometries: gpu.geometries,
+        textures: gpu.textures,
+      });
       nextSample += 30_000;
     }
     await page.waitForTimeout(500 + rnd() * 1500);
   }
   mkdirSync('reports', { recursive: true });
   writeFileSync('reports/soak.json', JSON.stringify({ minutes: MINUTES, actions, samples }, null, 2) + '\n');
-  console.log(`soak: ${actions} actions, heap samples ${samples.map((s) => s.heapMB.toFixed(1)).join(' ')} MB`);
+  console.log(`soak: ${actions} actions, heap samples ${samples.map((s) => s.heapMB.toFixed(2)).join(' ')} MB, GPU geometries ${samples.map((s) => s.geometries).join(' ')}, textures ${samples.map((s) => s.textures).join(' ')}`);
   expect(await page.evaluate(() => (window.__ps as TestApi).errors())).toEqual([]);
   expectCleanConsole(c);
-  // Heap after the first minute must stay within 5% of the maximum of the later samples (MASTER 12).
+  // MASTER 12: JS heap and live GPU resource counts flat within 5% (D-006). After the first
+  // minute of warm-up, the spread of the samples (largest minus smallest) must stay within 5%
+  // of the smallest; GPU counts are small integers, so 5% means they must not change at all.
   const settled = samples.filter((s) => s.t >= 60);
-  if (settled.length >= 2) {
-    const first = settled[0] as { heapMB: number };
-    const last = settled[settled.length - 1] as { heapMB: number };
-    expect(last.heapMB).toBeLessThanOrEqual(first.heapMB * 1.05 + 2);
-  }
+  expect(settled.length, 'need at least two settled samples').toBeGreaterThanOrEqual(2);
+  const flat = (values: number[], what: string): void => {
+    const lo = Math.min(...values);
+    const hi = Math.max(...values);
+    expect(hi - lo, `${what}: ${values.join(', ')}`).toBeLessThanOrEqual(0.05 * lo);
+  };
+  flat(settled.map((s) => s.heapMB), 'JS heap MB');
+  flat(settled.map((s) => s.geometries), 'GPU geometries');
+  flat(settled.map((s) => s.textures), 'GPU textures');
 });

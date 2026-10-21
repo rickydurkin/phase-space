@@ -190,6 +190,7 @@ export class RapierMechanics implements DomainModule {
     const r = new ByteReader(bytes);
     const snap = r.bytes();
     const w = RAPIER.World.restoreSnapshot(snap);
+    if (this.rapier !== null) this.rapier.free();
     this.rapier = w;
     this.bodies.clear();
     const n = r.u32();
@@ -211,6 +212,13 @@ export class RapierMechanics implements DomainModule {
 
   modelCards(): ModelCard[] {
     return [MECHANICS_MODEL_CARD];
+  }
+
+  /** Free the Rapier world (WebAssembly memory) now rather than when the garbage collector runs. */
+  dispose(): void {
+    if (this.rapier !== null) this.rapier.free();
+    this.rapier = null;
+    this.bodies.clear();
   }
 
   /** Rapier integration parameters, for the model card and reports. */

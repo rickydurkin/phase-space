@@ -301,6 +301,8 @@ async function boot(): Promise<void> {
       replay,
       replayVisible: startVisibleReplay,
       slowAs: (ms) => host.setFrameDelay(ms),
+      gpuResources: () => renderer.resourceCounts(),
+      asTotals: () => host.asTotals(),
       readPixels: async (x, y, w, h) => {
         await syncFrame();
         return renderer.readPixels(x, y, w, h);

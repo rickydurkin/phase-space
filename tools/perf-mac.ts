@@ -43,6 +43,7 @@ async function main(): Promise<void> {
       await page.evaluate((s) => (window.__ps as TestApi).loadScene(s, 7), scene);
       await page.evaluate(() => (window.__ps as TestApi).play());
       await page.waitForTimeout(1000); // warm up shaders and the first contacts
+      const before = await page.evaluate(() => (window.__ps as TestApi).asTotals());
       const frames: number[] = await page.evaluate(
         (seconds) =>
           new Promise<number[]>((resolve) => {
@@ -62,6 +63,11 @@ async function main(): Promise<void> {
       );
       const stats = await page.evaluate(() => (window.__ps as TestApi).frameStats());
       const state = await page.evaluate(() => (window.__ps as TestApi).getState());
+      const after = await page.evaluate(() => (window.__ps as TestApi).asTotals());
+      const simSeconds = (after.ticks - before.ticks) * after.dt;
+      const asMsPerSimSecond = simSeconds > 0 ? (after.ms - before.ms) / simSeconds : 0;
+      const reference = scene === 'cube-drop';
+      const frameBudget = reference ? 8.3 : 16.7;
       const sorted = [...frames].sort((a, b) => a - b);
       const row = {
         scene,
@@ -70,9 +76,15 @@ async function main(): Promise<void> {
         frames: frames.length,
         frameMs: { p50: pct(sorted, 0.5), p95: pct(sorted, 0.95), p99: pct(sorted, 0.99) },
         fps: stats.fps,
-        asMsPerFrame: stats.asMs,
-        asMsPerSimulatedSecond: stats.asMs * stats.fps,
+        asMsPerFrame: frames.length > 0 ? (after.ms - before.ms) / frames.length : 0,
+        asMsPerSimulatedSecond: asMsPerSimSecond,
+        simulatedSeconds: simSeconds,
         tick: state.tick,
+        frameBudgetMs: frameBudget,
+        overBudget: [
+          ...(pct(sorted, 0.95) > frameBudget ? [`frame p95 over ${frameBudget} ms`] : []),
+          ...(asMsPerSimSecond > 300 ? ['AS over 300 ms per simulated second'] : []),
+        ],
       };
       results.push(row);
       console.log(JSON.stringify(row));
@@ -89,14 +101,15 @@ async function main(): Promise<void> {
       '',
       'Budgets (MASTER 12, M4 Max, Ultra): frame p95 at most 8.3 ms in reference scenes and 16.7 ms in the stress scene; AS at most 300 ms per simulated second at 1x; no tick over 8 ms.',
       '',
-      '| Scene | Tier | Frame p50 ms | p95 ms | p99 ms | fps | AS ms per frame | AS ms per simulated second |',
-      '|---|---|---|---|---|---|---|---|',
+      '| Scene | Tier | Frame p50 ms | p95 ms | p99 ms | fps | AS ms per frame | AS ms per simulated second | Budget |',
+      '|---|---|---|---|---|---|---|---|---|',
       ...results.map((r) => {
-        const x = r as { scene: string; tier: string; frameMs: { p50: number; p95: number; p99: number }; fps: number; asMsPerFrame: number; asMsPerSimulatedSecond: number };
-        return `| ${x.scene} | ${x.tier} | ${x.frameMs.p50.toFixed(2)} | ${x.frameMs.p95.toFixed(2)} | ${x.frameMs.p99.toFixed(2)} | ${x.fps.toFixed(0)} | ${x.asMsPerFrame.toFixed(2)} | ${x.asMsPerSimulatedSecond.toFixed(0)} |`;
+        const x = r as { scene: string; tier: string; frameMs: { p50: number; p95: number; p99: number }; fps: number; asMsPerFrame: number; asMsPerSimulatedSecond: number; overBudget: string[] };
+        const budget = x.overBudget.length > 0 ? `over budget: ${x.overBudget.join('; ')}` : 'within budget';
+        return `| ${x.scene} | ${x.tier} | ${x.frameMs.p50.toFixed(2)} | ${x.frameMs.p95.toFixed(2)} | ${x.frameMs.p99.toFixed(2)} | ${x.fps.toFixed(0)} | ${x.asMsPerFrame.toFixed(2)} | ${x.asMsPerSimulatedSecond.toFixed(0)} | ${budget} |`;
       }),
       '',
-      'Frame intervals come from requestAnimationFrame deltas and are bound by the display refresh (8.33 ms at 120 Hz), so a p50 at the refresh interval means no missed vsync; GPU time per frame is not resolved until timestamp queries arrive in P1. cube-drop is the P00 reference scene; stack-1000 (1,000 cubes) stands in for the stress scene until RS1 to RS5 exist. Raw data: reports/perf-mac.json.',
+      'Frame intervals come from requestAnimationFrame deltas and are bound by the display refresh (8.33 ms at 120 Hz), so a p50 at the refresh interval means no missed vsync, and a p95 slightly above it is display jitter that still counts against the budget; GPU time per frame is not resolved until timestamp queries arrive in P1. AS cost is the running total kept by the worker over the measured window divided by the simulated seconds advanced, timed with performance.now at 100 microsecond resolution (no cross-origin isolation), so per-frame values are averages. cube-drop is the P00 reference scene; stack-1000 (1,000 cubes) stands in for the stress scene until RS1 to RS5 exist. Raw data: reports/perf-mac.json.',
       '',
     ];
     writeFileSync('docs/BASELINE.md', lines.join('\n'));

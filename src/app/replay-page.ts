@@ -64,3 +64,46 @@ const harness: ReplayHarness = {
 };
 
 window.__psReplay = harness;
+
+// Test builds only: ?auto=golden runs the golden replay served by tools/engine-check.ts
+// and posts the result back to it, so the real Chrome, Safari and Firefox on Ricky's
+// Mac can be checked without browser automation (P00 gate item 2).
+if (import.meta.env.VITE_TEST_API === '1') {
+  const params = new URLSearchParams(location.search);
+  if (params.get('auto') === 'golden') void autoGolden(params.get('nonce') ?? '');
+}
+
+async function autoGolden(nonce: string): Promise<void> {
+  const report = async (body: Record<string, unknown>): Promise<void> => {
+    await fetch('/__engine-result', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ nonce, ua: navigator.userAgent, ...body }),
+    });
+  };
+  try {
+    setStatus('running the golden replay in this browser...');
+    const golden = (await (await fetch('/__golden.json')).json()) as ReplayFile;
+    const result = await harness.run(golden);
+    let divergence: { tick: number; expected: string; actual: string } | null = null;
+    for (let i = 0; i < golden.hashes.length; i++) {
+      const e = golden.hashes[i];
+      const a = result.hashes[i];
+      if (e === undefined || a === undefined || e.tick !== a.tick || e.hash !== a.hash) {
+        divergence = { tick: e?.tick ?? -1, expected: e?.hash ?? '', actual: a?.hash ?? 'missing' };
+        break;
+      }
+    }
+    const matches = divergence === null && result.hashes.length === golden.hashes.length;
+    setStatus(
+      matches
+        ? `golden replay matches in this browser: ${result.finalHash} (${result.hashes.length} samples). You can close this tab.`
+        : `GOLDEN REPLAY DIFFERS in this browser at tick ${divergence?.tick}: expected ${divergence?.expected}, got ${divergence?.actual}`,
+    );
+    await report({ matches, finalHash: result.finalHash, samples: result.hashes.length, divergence });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    setStatus(`golden replay failed: ${message}`);
+    await report({ matches: false, error: message });
+  }
+}
