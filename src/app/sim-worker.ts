@@ -9,6 +9,7 @@
 import * as Comlink from 'comlink';
 import { Simulation, FrameClock, Pose, getScene, runScene, runReplay } from '../sim/index.ts';
 import type { InputCommand, ReplayFile, ReplayResult } from '../sim/index.ts';
+import { ReplayFileSchema } from '../content/schemas/replay.ts';
 import {
   FRAME_HEADER,
   FRAME_BODY_STRIDE,
@@ -35,24 +36,15 @@ interface ReplayRun {
   wallSeconds: number;
 }
 
+/** Replay files cross a trust boundary (files, share links, the test API): validate with the schema (MASTER 5.5). */
 function parseReplay(replayJson: string | ReplayFile): ReplayFile {
   const value: unknown = typeof replayJson === 'string' ? JSON.parse(replayJson) : replayJson;
-  if (typeof value !== 'object' || value === null) throw new Error('replay must be a JSON object');
-  const r = value as Partial<ReplayFile>;
-  if (
-    typeof r.format !== 'number' ||
-    typeof r.seed !== 'number' ||
-    typeof r.ticks !== 'number' ||
-    typeof r.hashEvery !== 'number' ||
-    typeof r.scene !== 'object' ||
-    r.scene === null ||
-    typeof r.scene.id !== 'string' ||
-    typeof r.scene.version !== 'number' ||
-    !Array.isArray(r.inputs)
-  ) {
-    throw new Error('replay is missing format, scene, seed, ticks, hashEvery or inputs');
+  const parsed = ReplayFileSchema.safeParse(value);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.slice(0, 5).map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`);
+    throw new Error(`invalid replay file: ${issues.join('; ')}`);
   }
-  return r as ReplayFile;
+  return parsed.data as ReplayFile;
 }
 
 export class SimWorker {

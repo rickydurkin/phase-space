@@ -131,14 +131,41 @@ export class Simulation {
   }
 
   /** Queue an input for a future (or the current, not yet stepped) tick. */
+  /**
+   * Queue an input for a future (or the current, not yet stepped) tick. Inputs are
+   * validated here, when they arrive, so a bad one is rejected to its sender and
+   * never reaches the log, the replay file or a later step (D-005).
+   */
   queueInput(cmd: InputCommand): void {
+    if (!Number.isInteger(cmd.tick) || cmd.tick < 0) {
+      throw new Error(`input tick must be a whole number of ticks, got ${String(cmd.tick)}`);
+    }
     if (cmd.tick < this.tickCount) {
       throw new Error(`input for tick ${cmd.tick} arrived at tick ${this.tickCount}; rewind first`);
     }
+    if (!Number.isInteger(cmd.entity) || !this.world.isAlive(cmd.entity) || !this.world.has(cmd.entity, RigidBody)) {
+      throw new Error(`input targets unknown entity ${String(cmd.entity)}`);
+    }
+    let copy: InputCommand;
+    switch (cmd.type) {
+      case 'impulse':
+        requireFinite(cmd.ix, cmd.iy, cmd.iz);
+        copy = { type: 'impulse', tick: cmd.tick, entity: cmd.entity, ix: cmd.ix, iy: cmd.iy, iz: cmd.iz };
+        break;
+      case 'nudge':
+        requireFinite(cmd.dx, cmd.dy, cmd.dz);
+        copy = { type: 'nudge', tick: cmd.tick, entity: cmd.entity, dx: cmd.dx, dy: cmd.dy, dz: cmd.dz };
+        break;
+      case 'wake':
+        copy = { type: 'wake', tick: cmd.tick, entity: cmd.entity };
+        break;
+      default:
+        throw new Error(`unknown input type ${String((cmd as { type?: unknown }).type)}`);
+    }
     // keep the log sorted by tick, stable for equal ticks
     let i = this.inputLog.length;
-    while (i > this.inputCursor && (this.inputLog[i - 1] as InputCommand).tick > cmd.tick) i--;
-    this.inputLog.splice(i, 0, cmd);
+    while (i > this.inputCursor && (this.inputLog[i - 1] as InputCommand).tick > copy.tick) i--;
+    this.inputLog.splice(i, 0, copy);
   }
 
   /** Advance one tick in the documented order. */
@@ -230,5 +257,11 @@ export class Simulation {
     this.inputLog.length = 0;
     for (let i = 0; i < nInputs; i++) this.inputLog.push(JSON.parse(r.str()) as InputCommand);
     this.events.clear();
+  }
+}
+
+function requireFinite(...values: number[]): void {
+  for (const v of values) {
+    if (typeof v !== 'number' || !Number.isFinite(v)) throw new Error(`input values must be finite numbers, got ${String(v)}`);
   }
 }
