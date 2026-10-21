@@ -165,7 +165,7 @@
         "Compare hashes with the golden file in each engine"
       ],
       "passes": false,
-      "evidence": "playwright golden.spec 15/10/2026: Chromium (V8) and WebKit (JavaScriptCore) reproduce cube-drop 3374e5261804bf27 and stack-1000 cd30206c8caedd4e exactly (reports/engines.json). Firefox: Playwright's Firefox 157 Nightly does not start on this macOS (ADR 0009); SpiderMonkey evidence waits for CI on Linux."
+      "evidence": "21/10/2026: Playwright Chromium (V8) and WebKit (JavaScriptCore) reproduce cube-drop 3374e5261804bf27 and stack-1000 cd30206c8caedd4e; tools/engine-check.ts shows Chrome 155, Safari 27.0.1 and Firefox 157 on Ricky's Mac reproduce all 20 golden samples (reports/engines-native.json). Firefox through Playwright does not start on this macOS (ADR 0009), so the Playwright Firefox run waits for CI on Linux."
     },
     {
       "id": "P00-012",
@@ -180,7 +180,7 @@
         "Rule tests"
       ],
       "passes": true,
-      "evidence": "vitest unit 15/10/2026: lint-rules.test.ts 9 passed (each rule fires on its probe; positive control passes; rules do not apply outside src/sim)"
+      "evidence": "21/10/2026: tests/unit/lint-rules.test.ts and depcruise-rules.test.ts, 30 of 30 passed, including 14 probes for the D-004 bypasses (13 failed on the old plugin) and a temporary-tree proof that the dependency-cruiser rules fire."
     },
     {
       "id": "P00-013",
@@ -226,7 +226,7 @@
         "Error overlay"
       ],
       "passes": true,
-      "evidence": "src/app, src/render, src/ui by the presentation subagent; verified in the built-in browser (Chrome 152, WebGPU and WebGL2) and by tests/e2e/smoke.spec.ts: boot 282 ms, backend WebGPU, cube visible, replay matches, console clean (15/10/2026)"
+      "evidence": "21/10/2026: built in the browser pane and through Playwright: WebGPU with WebGL2 fallback, AS in a worker, HUD with hash-at-tick and real-time badge (D-009), visible replay on R (D-003), camera that survives device loss (D-002); smoke boot 214 to 282 ms on the real GPU, console clean."
     },
     {
       "id": "P00-016",
@@ -240,8 +240,8 @@
         "device-loss.spec",
         "webgl.spec"
       ],
-      "passes": true,
-      "evidence": "playwright chromium 15/10/2026 (full Chromium new headless, Metal): smoke, webgl, device-loss (test API destroy and CDP Browser.crashGpuProcess; tick and hash intact), visual (webgpu and webgl baselines) 6 passed in 10.7 s. SwiftShader boot budget is a CI (Linux) measurement, pending the first CI run (ADR 0009)."
+      "passes": false,
+      "evidence": "21/10/2026, real GPU: smoke, WebGL2, 6 device-loss tests (D-001, D-002, D-010), visual, replay and real-time specs all pass. Not yet evidenced: 'interactive within 30 s under SwiftShader', because SwiftShader loses the WebGPU device on macOS (ADR 0009); measured in CI on Linux."
     },
     {
       "id": "P00-017",
@@ -257,7 +257,7 @@
         "gate tool"
       ],
       "passes": true,
-      "evidence": "npm run gate P00 on 16/10/2026 (commit 5b634ab): 18 of 18 items pass in 34 minutes; test:visual 2 passed with per-adapter baselines (tests/visual/baselines/*-darwin-gpu.json); test:soak 5 minutes, 235 random actions, JS heap 5.6 to 5.9 MB, console clean; perf:mac wrote docs/BASELINE.md (120 Hz vsync-bound, stack-1000 AS 168 ms per simulated second); docs/phases/P00-report.md written with caveats."
+      "evidence": "npm run gate P00 on commit 7821872 (21/10/2026), 18.6 minutes: 8 of 11 items pass, 0 fail, 3 blocked; test:visual 2 passed and fails on a missing baseline (D-008); test:soak 5 minutes with heap 5.74 to 5.88 MB after warm-up and GPU counts flat (D-006); perf:mac wrote docs/BASELINE.md with budgets flagged (D-011)."
     },
     {
       "id": "P00-018",
@@ -287,7 +287,7 @@
         "Size budget"
       ],
       "passes": false,
-      "evidence": null
+      "evidence": "Workflows ci.yml, nightly.yml and deploy.yml written and reviewed; the bundle budget passes (1.83 MB total, worker chunk 1.60 MB). CI has never run: no git remote until Ricky answers Q1 and Q2."
     },
     {
       "id": "P00-020",
@@ -301,7 +301,7 @@
         "Hook proof"
       ],
       "passes": true,
-      "evidence": "docs/phases/P00-hook-proof.md: PostToolUse exit 2 on a type error (TS2322) and on invalid WGSL (error at 3:7, a let of type f32 given a u32); clean file exit 0; Stop hook with stop_hook_active true exit 0. Agents 5, skills 5, rules 3, .mcp.json. Behaviour inside a live Claude Code CLI session not yet observed (CLI not on PATH in session 1)."
+      "evidence": "docs/phases/P00-hook-proof.md, 21/10/2026, live session: PostToolUse blocked a type error and invalid WGSL on branch scratch/hook-proof (then deleted); the Stop hook blocked on a failing verify:fast on 20/10; .claude/rules/sim.md and gpu.md loaded on their paths; the gate-reviewer subagent ran; the run-game skill loaded and was followed."
     },
     {
       "id": "P00-021",
@@ -333,7 +333,7 @@
         "Keep PROGRESS under 150 lines"
       ],
       "passes": true,
-      "evidence": "docs/: PROGRESS, DEFECTS, LEARNINGS (7), IDEAS (3), PHYSICS-CHANGELOG (0.1.0), BASELINE (pending perf:mac), architecture/SCHEDULE.md, model-cards/mechanics-rigid.md, adr/0001 to 0006, research/2026-10-15-refresh.md"
+      "evidence": "21/10/2026: PROGRESS (session 2), DEFECTS (D-001 to D-011), LEARNINGS (16), IDEAS, PHYSICS-CHANGELOG, BASELINE (re-measured), SCHEDULE, model card (M1 sign corrected), ADRs 0001 to 0009 (0007 corrected), research refresh, P00-review.md, P00-hook-proof.md."
     }
   ]
 }

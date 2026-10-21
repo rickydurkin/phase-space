@@ -13,24 +13,24 @@ Ricky was not available during session 1, so these are working assumptions, each
 2. Where Claude Code is running: on Ricky's Mac (Apple M4 Max, 128 GB, macOS 27.0.1, Chrome 155 and Safari installed). Real GPU available: perf:mac has run.
 3. Working title: PHASE SPACE stays.
 
-## Current state (session 1)
+## Current state (end of session 2, 21/10/2026)
 
-P00 is built end to end; 20 of 22 features in docs/features.json pass with evidence (P00-011 Firefox and P00-019 CI wait for the first CI run). `npm run gate P00` passes 18 of 18 automated items (commit 5b634ab, 16/10/2026) with the caveats listed in the report. The deterministic core, Rapier mechanics, dmath, the golden harness, the browser app (WebGPU with WebGL2 fallback, worker, HUD, replay) and every command in MASTER 13.1 exist and run. The gate report is docs/phases/P00-report.md.
+P00 is built and reviewed. The independent gate review (docs/phases/P00-review.md) recommended fail and filed D-002 to D-010; all nine are fixed with regression tests that failed before the fix. The final gate run on commit 7821872 (docs/phases/P00-report.md): 8 of 11 items pass, 0 fail, 3 blocked. 19 of 22 features in docs/features.json pass.
 
-Known gaps, all recorded in the report:
+The three blocked items all need the first CI run on Linux, which needs Q1 and Q2:
 
-- Firefox: Playwright's Firefox build does not start on this macOS (ADR 0009). Chromium and WebKit reproduce the golden hashes exactly. SpiderMonkey evidence needs the first CI run (Linux).
-- SwiftShader: on macOS every SwiftShader WebGPU configuration loses the device at the first canvas present, so the local e2e runs on the real GPU; the 30 s SwiftShader boot budget is a CI measurement (ADR 0009).
-- CI has never run (no remote). Workflows are written: ci.yml, nightly.yml, deploy.yml (deploy only when the repository variable DEPLOY_APPROVED is "true").
-- Claude Code hooks, rules, agents and skills are written and the hooks are proven by direct invocation (docs/phases/P00-hook-proof.md); their behaviour inside a live CLI session is not yet observed (no `claude` on PATH in session 1).
-- Spike S2 measured 1,000 meshes, not 10,000 instanced bodies (ADR 0007); instancing and post-processing are P1 work.
+- Item 2: Firefox through Playwright. The engine itself is evidenced: Chrome 155, Safari 27.0.1 and Firefox 157 on Ricky's Mac reproduce every golden hash (reports/engines-native.json), as do Playwright Chromium and WebKit.
+- Item 6: interactive within 30 s under SwiftShader (SwiftShader loses the device on macOS, ADR 0009).
+- Item 8: CI green on main.
+
+Open defect: D-011 (cube-drop frame-interval p95 9.7 ms against 8.3 ms, measured at load average 31; needs GPU timestamps in P1 and an idle re-run).
 
 ## Next steps (in order)
 
-1. Ricky answers the open questions below; create the GitHub repository, push, watch the first CI run (Firefox golden, SwiftShader e2e on Linux), fix anything it finds.
-2. Run `npm run gate P00` after the CI run, ask the gate-reviewer subagent to refute the report (`npm run gate P00 review`), then Ricky's playtest (checklist at the end of the report).
-3. On "close P00": tag v0.1.0 (MASTER 3.4), then seed docs/features.json with P01 entries in P1's first session and run the P1 research refresh.
-4. P1 carries: InstancedMesh batching and the 10,000-body spike (ADR 0007), Preact signals HUD (ADR 0008), GPU timestamp queries for real frame cost, adaptive snapshot ring depth (ADR 0004), remove react and zustand from devDependencies (ADR 0008).
+1. Ricky answers Q1 to Q3; create the GitHub repository, push, and watch the first CI run. Expect it to fail test:visual until linux-swiftshader baselines are recorded with PS_UPDATE_BASELINES=1 and committed (D-008 working as intended).
+2. Re-run `npm run gate P00`; items 2, 6 and 8 should then have their evidence. Ask the gate-reviewer subagent for a second review of the fixes.
+3. Ricky's playtest (checklist at the end of the report), then "close P00" and tag v0.1.0.
+4. P1 carries: InstancedMesh and the 10,000-body spike (ADR 0007), Preact signals HUD (ADR 0008), GPU timestamp queries (D-011), the plain Rapier deterministic build with a .wasm asset to free the worker chunk's size headroom (IDEAS), adaptive snapshot ring depth (ADR 0004), remove react and zustand from devDependencies.
 
 ## Open questions for Ricky
 
@@ -38,8 +38,17 @@ Known gaps, all recorded in the report:
 - Q2: approve publishing (GitHub remote, Actions, Pages deployment)? Nothing is published until you say so; deploy.yml also waits for the DEPLOY_APPROVED variable.
 - Q3: does the working title PHASE SPACE stay?
 - Q4: ADR 0008 chooses Preact signals over the MASTER default of React with Zustand on measured cost; confirm or overrule.
+- Q5: R now replays the run visibly from the start before comparing hashes (D-003). The reviewer left this to you; say if you would rather R check silently.
 
 ## Session log
+
+### Session 2, 20/10/2026 to 21/10/2026 (Opus 5.5)
+
+- Shown the build in the browser pane; the Stop hook blocked once on a load-induced timeout (another project's jobs), cleared on rerun.
+- Fixed D-001 (unhandled popErrorScope rejection after a GPU crash).
+- Independent gate review (gate-reviewer subagent): fail, D-002 to D-010 filed.
+- Fixed D-002 camera after recovery, D-003 visible replay and hash-at-tick, D-004 lint bypasses, D-005 input validation, D-006 soak to the 5% rule with GPU counts, D-007 gate tool rewritten, D-008 visual baselines, D-009 real-time monitor, D-010 recovery retries and WebGL2 fallback. Each has a regression test shown to fail without its fix.
+- New: tools/engine-check.ts (golden replay in the Mac's own Chrome, Safari and Firefox: all match), live evidence for hooks, scoped rules, subagent and skill (P00-hook-proof.md), perf:mac averaging and budget flags, D-011 filed.
 
 ### Session 1, 15/10/2026 to 16/10/2026
 
