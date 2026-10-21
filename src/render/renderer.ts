@@ -94,10 +94,37 @@ function makeGridTexture(): CanvasTexture {
   return tex;
 }
 
+/** Recovery attempts after a device loss: WebGPU three times, then WebGL2 (D-010). */
+interface RecoveryAttempt {
+  readonly forceWebGL: boolean;
+  readonly delayMs: number;
+}
+const WEBGPU_THEN_WEBGL_ATTEMPTS: readonly RecoveryAttempt[] = [
+  { forceWebGL: false, delayMs: 0 },
+  { forceWebGL: false, delayMs: 500 },
+  { forceWebGL: false, delayMs: 2000 },
+  { forceWebGL: true, delayMs: 0 },
+];
+const WEBGL_ATTEMPTS: readonly RecoveryAttempt[] = [
+  { forceWebGL: true, delayMs: 0 },
+  { forceWebGL: true, delayMs: 1000 },
+];
+/** More than this many losses within the window means WebGPU cannot hold a device here. */
+const MAX_RECOVERIES_IN_WINDOW = 2;
+const RECOVERY_WINDOW_MS = 10_000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export class SceneRenderer {
   readonly camera: PerspectiveCamera;
   /** Called after a lost GPU device has been replaced. */
   onDeviceLost: (message: string) => void = () => undefined;
+  /** Called with the new canvas when recovery replaces it, so input handlers can move to it (D-002). */
+  onCanvasReplaced: (canvas: HTMLCanvasElement) => void = () => undefined;
+  /** Called when the device cannot be replaced: rendering has stopped, the simulation keeps running. */
+  onRecoveryFailed: (error: unknown) => void = () => undefined;
 
   private renderer: WebGPURenderer;
   private scene: Scene;
@@ -310,39 +337,92 @@ export class SceneRenderer {
   }
 
   private recovering: Promise<void> | null = null;
+  /** performance.now() of recent recoveries, for detecting a device that keeps failing. */
+  private recoveryTimes: number[] = [];
+  /** Test builds only (failNextRecoveries): make the next n renderer creations fail. */
+  private forcedFailures = 0;
 
+  /** Test hook: the next n attempts to create a renderer during recovery fail (D-010 tests). */
+  failNextRecoveries(n: number): void {
+    this.forcedFailures = Math.max(0, Math.floor(n));
+  }
+
+  /**
+   * Replace a lost device (D-010). The old canvas stays in the page until a new
+   * renderer exists, so a failed attempt never leaves the page without a canvas.
+   * WebGPU is retried three times (0, 0.5 and 2 s), then WebGL2 is tried; more
+   * than two losses within 10 s go straight to WebGL2. If every attempt fails,
+   * rendering stops visibly through onRecoveryFailed while the simulation keeps
+   * running in its worker. This promise never rejects.
+   */
   private recover(reason: string): Promise<void> {
     if (this.disposed) return Promise.resolve();
     if (this.recovering !== null) return this.recovering;
     this.lost = true;
-    this.recovering = (async () => {
-      const old = this.renderer;
-      let disposeNote = '';
-      try {
-        await old.dispose();
-      } catch (e) {
-        disposeNote = `; old renderer dispose failed: ${e instanceof Error ? e.message : String(e)}`;
-      }
-      old.domElement.remove();
-      this.clearSceneResources();
-
-      const fresh = await SceneRenderer.makeRenderer(this.options);
-      this.container.append(fresh.domElement);
-      this.renderer = fresh;
-      this.backendName = SceneRenderer.detectBackend(fresh);
-      this.configure(fresh);
-      this.scene = this.buildScene();
-      this.rebuildMeshes();
-      this.resize();
-      this.watchDevice(fresh);
-      this.lost = false;
+    this.recovering = this.runRecovery(reason).catch((e: unknown) => {
       this.recovering = null;
-      const dropped =
-        this.droppedErrorChecks > 0 ? `; ${this.droppedErrorChecks} pending GPU error checks dropped with the old device` : '';
-      this.droppedErrorChecks = 0;
-      this.onDeviceLost(`GPU device lost: recovered (${reason}${disposeNote}${dropped})`);
-    })();
+      this.onRecoveryFailed(e);
+    });
     return this.recovering;
+  }
+
+  private async runRecovery(reason: string): Promise<void> {
+    const old = this.renderer;
+    const now = performance.now();
+    this.recoveryTimes = this.recoveryTimes.filter((t) => now - t < RECOVERY_WINDOW_MS);
+    this.recoveryTimes.push(now);
+    const webglOnly = this.options.forceWebGL || this.recoveryTimes.length > MAX_RECOVERIES_IN_WINDOW;
+    const attempts = webglOnly ? WEBGL_ATTEMPTS : WEBGPU_THEN_WEBGL_ATTEMPTS;
+    const failures: string[] = [];
+    let fresh: WebGPURenderer | null = null;
+    for (const attempt of attempts) {
+      if (attempt.delayMs > 0) await sleep(attempt.delayMs);
+      if (this.disposed) return;
+      try {
+        if (this.forcedFailures > 0) {
+          this.forcedFailures--;
+          throw new Error('forced failure (test hook)');
+        }
+        fresh = await SceneRenderer.makeRenderer({ ...this.options, forceWebGL: attempt.forceWebGL });
+        break;
+      } catch (e) {
+        failures.push(`${attempt.forceWebGL ? 'WebGL2' : 'WebGPU'}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    if (fresh === null) {
+      // Rendering stays stopped (lost remains true); the last canvas stays in place.
+      this.recovering = null;
+      this.onRecoveryFailed(
+        new Error(`GPU device lost (${reason}) and recovery failed after ${failures.length} attempts: ${failures.join('; ')}`),
+      );
+      return;
+    }
+
+    let disposeNote = '';
+    try {
+      await old.dispose();
+    } catch (e) {
+      disposeNote = `; old renderer dispose failed: ${e instanceof Error ? e.message : String(e)}`;
+    }
+    if (old.domElement.isConnected) old.domElement.replaceWith(fresh.domElement);
+    else this.container.append(fresh.domElement);
+    this.clearSceneResources();
+
+    this.renderer = fresh;
+    this.backendName = SceneRenderer.detectBackend(fresh);
+    this.configure(fresh);
+    this.scene = this.buildScene();
+    this.rebuildMeshes();
+    this.resize();
+    this.watchDevice(fresh);
+    this.lost = false;
+    this.recovering = null;
+    this.onCanvasReplaced(fresh.domElement);
+    const dropped =
+      this.droppedErrorChecks > 0 ? `; ${this.droppedErrorChecks} pending GPU error checks dropped with the old device` : '';
+    this.droppedErrorChecks = 0;
+    const retried = failures.length > 0 ? `; ${failures.length} failed attempts first (${failures.join('; ')})` : '';
+    this.onDeviceLost(`GPU device lost: recovered on ${this.backendName} (${reason}${disposeNote}${dropped}${retried})`);
   }
 
   private buildScene(): Scene {

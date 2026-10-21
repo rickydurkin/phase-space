@@ -31,7 +31,7 @@ const MAX_PITCH = 1.5;
 
 export class OrbitCameraController {
   readonly camera: PerspectiveCamera;
-  readonly element: HTMLElement;
+  private element: HTMLElement;
   private readonly goalTarget: Vector3;
   private readonly target: Vector3;
   private goalYaw: number;
@@ -61,17 +61,41 @@ export class OrbitCameraController {
     this.maxDistance = options.maxDistance ?? 60;
     this.damping = options.damping ?? 14;
 
-    element.addEventListener('pointerdown', this.onPointerDown);
-    element.addEventListener('pointermove', this.onPointerMove);
-    element.addEventListener('pointerup', this.onPointerEnd);
-    element.addEventListener('pointercancel', this.onPointerEnd);
-    element.addEventListener('wheel', this.onWheel, { passive: false });
-    element.addEventListener('contextmenu', this.onContextMenu);
+    this.listen(element);
     this.apply();
   }
 
+  /** The element whose pointer and wheel events drive the camera. */
+  get inputElement(): HTMLElement {
+    return this.element;
+  }
+
+  /**
+   * Move input handling to a new element, for example the canvas that replaces
+   * a lost one after device-loss recovery (D-002). Camera position is kept.
+   */
+  attach(element: HTMLElement): void {
+    if (element === this.element) return;
+    this.unlisten(this.element);
+    this.drag = null;
+    this.element = element;
+    this.listen(element);
+  }
+
   dispose(): void {
-    const e = this.element;
+    this.unlisten(this.element);
+  }
+
+  private listen(e: HTMLElement): void {
+    e.addEventListener('pointerdown', this.onPointerDown);
+    e.addEventListener('pointermove', this.onPointerMove);
+    e.addEventListener('pointerup', this.onPointerEnd);
+    e.addEventListener('pointercancel', this.onPointerEnd);
+    e.addEventListener('wheel', this.onWheel, { passive: false });
+    e.addEventListener('contextmenu', this.onContextMenu);
+  }
+
+  private unlisten(e: HTMLElement): void {
     e.removeEventListener('pointerdown', this.onPointerDown);
     e.removeEventListener('pointermove', this.onPointerMove);
     e.removeEventListener('pointerup', this.onPointerEnd);

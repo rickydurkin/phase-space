@@ -5,6 +5,11 @@
 import type { InputCommand, ReplayFile, ReplayResult } from '../sim/index.ts';
 import type { SimState, ReplayCheck } from './protocol.ts';
 
+export interface CrashOptions {
+  /** Make the next n renderer creations during recovery fail (D-010 tests). */
+  readonly failRecoveries?: number;
+}
+
 export interface FrameStats {
   readonly fps: number;
   readonly asMs: number;
@@ -23,7 +28,7 @@ export interface TestApiBackend {
   play(): Promise<void>;
   replay(): Promise<ReplayCheck>;
   readPixels(x: number, y: number, w: number, h: number): Promise<Uint8Array>;
-  crashGpu(): boolean;
+  crashGpu(options?: CrashOptions): boolean;
   backend(): string;
   errors(): string[];
   frameStats(): FrameStats;
@@ -42,7 +47,7 @@ export interface TestApi {
   play(): Promise<void>;
   replay(): Promise<ReplayCheck>;
   readPixels(x: number, y: number, w: number, h: number): Promise<Uint8Array>;
-  crashGpu(): Promise<boolean>;
+  crashGpu(options?: CrashOptions): Promise<boolean>;
   backend(): string;
   errors(): string[];
   frameStats(): FrameStats;
@@ -78,7 +83,7 @@ export function installTestApi(ready: Promise<void>, errors: () => string[]): (b
     play: async () => (await get()).play(),
     replay: async () => (await get()).replay(),
     readPixels: async (x, y, w, h) => (await get()).readPixels(x, y, w, h),
-    crashGpu: async () => (await get()).crashGpu(),
+    crashGpu: async (options) => (await get()).crashGpu(options),
     backend: () => impl?.backend() ?? 'not ready',
     errors,
     frameStats: () => impl?.frameStats() ?? { fps: 0, asMs: 0 },

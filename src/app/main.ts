@@ -71,6 +71,15 @@ async function boot(): Promise<void> {
   renderer.onDeviceLost = (message) => {
     hud.setNote(message);
   };
+  // D-002: recovery replaces the canvas; the camera's input must follow it.
+  renderer.onCanvasReplaced = (canvas) => {
+    camera.attach(canvas);
+  };
+  // D-010: when no renderer can be created, say so and keep the simulation running.
+  renderer.onRecoveryFailed = (err) => {
+    hud.setNote('GPU unavailable: drawing has stopped but the simulation keeps running. Reload the page to try again.');
+    overlay.report(err, 'gpu.recovery');
+  };
 
   const setPaused = async (value: boolean): Promise<void> => {
     paused = value;
@@ -210,7 +219,10 @@ async function boot(): Promise<void> {
         await syncFrame();
         return renderer.readPixels(x, y, w, h);
       },
-      crashGpu: () => renderer.crashDevice(),
+      crashGpu: (options) => {
+        if (options?.failRecoveries !== undefined) renderer.failNextRecoveries(options.failRecoveries);
+        return renderer.crashDevice();
+      },
       backend: () => renderer.backend,
       errors: () => overlay.errors(),
       frameStats: () => ({ fps, asMs }),
