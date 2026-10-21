@@ -197,10 +197,18 @@ test('D-010: when every attempt fails the page says so, keeps its canvas and the
   const errors = await page.evaluate(() => (window.__ps as TestApi).errors());
   expect(errors).toHaveLength(1);
   expect(errors[0]).toContain('recovery failed after 4 attempts');
-  // The simulation is unaffected: it still steps and hashes.
+  // The simulation is unaffected: it is still running (this test never pauses it), so the tick
+  // keeps advancing on its own, and it still steps on request and hashes.
   const t0 = (await page.evaluate(() => (window.__ps as TestApi).getState())).tick;
+  await page.waitForTimeout(500);
+  const t1 = (await page.evaluate(() => (window.__ps as TestApi).getState())).tick;
+  expect(t1, 'running after the failed recovery').toBeGreaterThan(t0 + 30);
+  await page.evaluate(() => (window.__ps as TestApi).pause());
+  const t2 = (await page.evaluate(() => (window.__ps as TestApi).getState())).tick;
   await page.evaluate(() => (window.__ps as TestApi).step(30));
-  expect((await page.evaluate(() => (window.__ps as TestApi).getState())).tick).toBe(t0 + 30);
+  const after = await page.evaluate(() => (window.__ps as TestApi).getState());
+  expect(after.tick).toBe(t2 + 30);
+  expect(after.hash).toMatch(/^[0-9a-f]{16}$/);
   // The reported error is the expected one; nothing else may reach the console.
   c.errors.splice(0, c.errors.length, ...c.errors.filter((e) => !/recovery failed after 4 attempts|\[gpu\.recovery\]/.test(e)));
   expectCleanConsole(c);
