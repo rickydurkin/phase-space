@@ -11,8 +11,9 @@ on:
         type: boolean
         default: false
 
+# Keyed on the event too, so a manual baseline recording never cancels the push run (it did once, 23/10/2026).
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
