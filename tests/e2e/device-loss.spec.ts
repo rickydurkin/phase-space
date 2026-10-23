@@ -173,9 +173,12 @@ test('D-010: when WebGPU cannot be recreated the game falls back to WebGL2', asy
   expect(await page.evaluate(() => (window.__ps as TestApi).crashGpu({ failRecoveries: 3 }))).toBe(true);
   await expect.poll(() => hudNote(page), { timeout: 30_000 }).toContain('recovered on WebGL2');
   expect(await page.evaluate(() => (window.__ps as TestApi).backend())).toBe('WebGL2');
-  await expect.poll(() => cubeVisible(page), { timeout: 30_000, intervals: [500] }).toBe(true);
   expect(await canvasCount(page)).toBe(1);
   expect((await page.evaluate(() => (window.__ps as TestApi).getState())).hash).toBe(before.hash);
+  // Let the cube land before looking for it: in the air it sits at the top edge of the view with its
+  // shaded faces towards the camera, which the colour test does not count (first CI run, SwiftShader).
+  await page.evaluate(() => (window.__ps as TestApi).step(300));
+  await expect.poll(() => cubeVisible(page), { timeout: 30_000, intervals: [500] }).toBe(true);
   // The camera still works on the WebGL2 canvas too.
   const v0 = await viewSignature(page);
   await orbitDrag(page);

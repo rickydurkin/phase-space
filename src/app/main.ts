@@ -18,7 +18,12 @@ import { parseReplayFile } from './replay-validate.ts';
 const SCENE_ID = 'cube-drop';
 const SEED = 1;
 /** Longest wall-clock delta fed to the clock, s (tab switches, debugger pauses). */
-const MAX_FRAME_SECONDS = 0.1;
+// D-012: this cap only guards against long gaps (debugger, a stalled tab). It was 0.1 s, which
+// threw simulated time away whenever rendering ran below 10 fps even when the AS could keep up
+// (found by the first CI run: 0.21x of real time under SwiftShader). The real per-frame limit is
+// the frame clock's 48-tick budget (MASTER 5.3), which flags what it drops; anything lost beyond
+// it is caught by the real-time monitor.
+const MAX_FRAME_SECONDS = 0.5;
 const HUD_INTERVAL_MS = 50;
 
 const overlay = installErrorOverlay();
@@ -215,6 +220,15 @@ async function boot(): Promise<void> {
       host.frame(seconds).then(
         (result) => {
           applyFrameResult(result);
+          // D-009: sample the real-time monitor once per completed worker frame, so wall time and
+          // simulated time are measured over the same intervals (sampling on a separate timer while
+          // simulated time arrives in chunks gave errors of up to 20% over the window).
+          const wallNow = performance.now() / 1000;
+          const simNow = result.buffer[FRAME_SIM_TIME] ?? 0;
+          const active = !paused && visibleReplay === null && !simFailed && !document.hidden;
+          realTime.push(wallNow - monitorWall, simNow - monitorSim, timeScale, active);
+          monitorWall = wallNow;
+          monitorSim = simNow;
           frameInFlight = false;
         },
         (err: unknown) => {
@@ -232,13 +246,7 @@ async function boot(): Promise<void> {
 
     if (now - lastHud >= HUD_INTERVAL_MS) {
       lastHud = now;
-      // D-009: compare simulated time with wall time, whatever the cause of lost time.
       const simNow = latest?.[FRAME_SIM_TIME] ?? 0;
-      const wallNow = now / 1000;
-      const active = !paused && visibleReplay === null && !simFailed && !document.hidden;
-      realTime.push(wallNow - monitorWall, simNow - monitorSim, timeScale, active);
-      monitorWall = wallNow;
-      monitorSim = simNow;
       hud.update({
         fps,
         asMs,
