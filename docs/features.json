@@ -164,8 +164,8 @@
         "replay.html harness",
         "Compare hashes with the golden file in each engine"
       ],
-      "passes": false,
-      "evidence": "21/10/2026: Playwright Chromium (V8) and WebKit (JavaScriptCore) reproduce cube-drop 3374e5261804bf27 and stack-1000 cd30206c8caedd4e; tools/engine-check.ts shows Chrome 155, Safari 27.0.1 and Firefox 157 on Ricky's Mac reproduce all 20 golden samples (reports/engines-native.json). Firefox through Playwright does not start on this macOS (ADR 0009), so the Playwright Firefox run waits for CI on Linux."
+      "passes": true,
+      "evidence": "24/10/2026: CI run 40034825786 on 1db8418 (GitHub Actions, Linux): Playwright Firefox, Chromium and WebKit each reproduce the cube-drop golden hashes and the stack-1000 hash (2 of 2 per engine). Earlier evidence stands: Chrome 155, Safari 27.0.1 and Firefox 157 on Ricky's Mac reproduce all 20 golden samples (reports/engines-native.json)."
     },
     {
       "id": "P00-012",
@@ -240,8 +240,8 @@
         "device-loss.spec",
         "webgl.spec"
       ],
-      "passes": false,
-      "evidence": "21/10/2026, real GPU: smoke, WebGL2, 6 device-loss tests (D-001, D-002, D-010), visual, replay and real-time specs all pass. Not yet evidenced: 'interactive within 30 s under SwiftShader', because SwiftShader loses the WebGPU device on macOS (ADR 0009); measured in CI on Linux."
+      "passes": true,
+      "evidence": "24/10/2026: CI run 40034825786 on 1db8418 (Linux, SwiftShader WebGPU): boot 415 ms against the 30 s budget, cube found by pixel readback, 6 of 6 device-loss tests (D-001, D-002, D-010), WebGL2 fallback, zero console errors; all 21 Playwright tests passed. On the Mac's GPU the gate run on 1db8418 passed 20 of 20, the 5-minute soak included."
     },
     {
       "id": "P00-017",
@@ -286,8 +286,8 @@
         "Artefact upload",
         "Size budget"
       ],
-      "passes": false,
-      "evidence": "Workflows ci.yml, nightly.yml and deploy.yml written and reviewed; the bundle budget passes (1.83 MB total, worker chunk 1.60 MB). CI has never run: no git remote until Ricky answers Q1 and Q2."
+      "passes": true,
+      "evidence": "24/10/2026: ci.yml green on main (run 40034825786 on 1db8418, after D-012 to D-014 were fixed); deploy.yml runs after CI and skips itself while DEPLOY_APPROVED is unset (run 40029425742: skipped), as Ricky asked; bundle 1.83 MB gzip against 2.5 MB, worker chunk 1.60 MB against 1.6 MB. nightly.yml is scheduled for 02:30 UTC and had not yet run when this was written."
     },
     {
       "id": "P00-020",

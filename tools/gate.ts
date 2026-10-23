@@ -435,8 +435,9 @@ function item(n: number, result: Result, evidence: string[]): void {
 
 const counts = { pass: 0, fail: 0, blocked: 0, 'not run': 0 } as Record<Result, number>;
 for (const it of items) counts[it.result]++;
-const commit = spawnSync(GIT, ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).stdout.trim() || 'uncommitted';
-const dirty = spawnSync(GIT, ['status', '--porcelain'], { encoding: 'utf8' }).stdout.trim() !== '';
+const commit = head.slice(0, 7) || 'uncommitted';
+// The tree as it was when the checks started; the golden spec rewrites reports/engines.json during the run.
+const dirty = !clean;
 const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 const physics = /PHYSICS_VERSION = '([^']+)'/.exec(readFileSync('src/sim/version.ts', 'utf8'))?.[1] ?? '?';
 const d = new Date();
@@ -500,6 +501,12 @@ const lines = [
   "## Playtest checklist for Ricky",
   playtest.trimEnd(),
   '',
+  ...(review
+    ? []
+    : [
+        'Until Ricky approves GitHub Pages (Q2b in docs/PROGRESS.md) there is no deployed page: play the local build instead (`npm run dev`, then the printed address in Chrome and in Safari).',
+        '',
+      ]),
   `Logs and structured results: ${LOGS}/ and reports/playwright.json.`,
   '',
 ];
