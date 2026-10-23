@@ -97,11 +97,16 @@ export async function findCube(page: Page): Promise<{ found: boolean; at: number
   const { w, h } = await canvasSize(page);
   const size = 8;
   const x = Math.floor(w / 2 - size / 2);
+  const top = Math.floor(h * 0.1);
+  const squares = Math.ceil((h * 0.9 - top) / size);
+  // One read for the whole column. Every readPixels renders the scene again, which took 1.4 s on
+  // SwiftShader after device-loss recovery (CI run 3), so square-by-square reads ran out of time.
+  const px = await readRegion(page, x, top, size, squares * size);
+  const bytes = size * size * 4;
   let best: Rgb = { r: 0, g: 0, b: 0 };
-  for (let y = Math.floor(h * 0.1); y < h * 0.9; y += size) {
-    const px = await readRegion(page, x, y, size, size);
-    const c = meanColour(px, size, size);
-    if (looksLikeCube(c)) return { found: true, at: y, colour: c };
+  for (let i = 0; i < squares; i++) {
+    const c = meanColour(px.slice(i * bytes, (i + 1) * bytes), size, size);
+    if (looksLikeCube(c)) return { found: true, at: top + i * size, colour: c };
     if (c.r > best.r) best = c;
   }
   return { found: false, at: -1, colour: best };
