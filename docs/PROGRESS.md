@@ -7,11 +7,13 @@ Last updated: 16/10/2026 (end of session 1)
 
 ## Setup answers (P00 planning questions)
 
-Ricky was not available during session 1, so these are working assumptions, each cheap to change (see Open questions).
+Answered by Ricky on 21/10/2026:
 
-1. Repository visibility and licence: not decided. The repository is local only (no GitHub remote) and has no LICENSE file. Nothing has been published.
-2. Where Claude Code is running: on Ricky's Mac (Apple M4 Max, 128 GB, macOS 27.0.1, Chrome 155 and Safari installed). Real GPU available: perf:mac has run.
+1. Repository visibility and licence: public, MIT (LICENSE). Approved by Ricky on 21/10/2026.
+2. Publishing: create the public GitHub repository, push and run CI. Approved by Ricky on 21/10/2026. GitHub Pages deployment is not approved yet; deploy.yml stays idle until the repository variable DEPLOY_APPROVED is "true".
 3. Working title: PHASE SPACE stays.
+
+Claude Code runs on Ricky's Mac (Apple M4 Max, 128 GB, macOS 27.0.1, Chrome, Safari and Firefox installed).
 
 ## Current state (end of session 2, 21/10/2026)
 
@@ -34,9 +36,7 @@ Open defect: D-011 (cube-drop frame-interval p95 9.7 ms against 8.3 ms, measured
 
 ## Open questions for Ricky
 
-- Q1: public or private repository, and which licence? GitHub Pages needs a paid plan for private repositories.
-- Q2: approve publishing (GitHub remote, Actions, Pages deployment)? Nothing is published until you say so; deploy.yml also waits for the DEPLOY_APPROVED variable.
-- Q3: does the working title PHASE SPACE stay?
+- Q2b: approve GitHub Pages deployment (set the repository variable DEPLOY_APPROVED to true)? Not yet approved.
 - Q4: ADR 0008 chooses Preact signals over the MASTER default of React with Zustand on measured cost; confirm or overrule.
 - Q5: R now replays the run visibly from the start before comparing hashes (D-003). The reviewer left this to you; say if you would rather R check silently.
 

@@ -13,3 +13,7 @@ npm run build:test && npm run preview
 ```
 
 Then open http://localhost:4181/ in Chrome or Safari. Press R to replay the run and compare hashes.
+
+## Licence
+
+MIT, see LICENSE. The programme pack in programme/ is part of the repository and is covered by the same licence.
