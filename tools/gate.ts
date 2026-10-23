@@ -13,7 +13,7 @@
 // - The review run carries no builder commentary.
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
-import { loadavg, cpus } from 'node:os';
+import { loadavg, cpus, homedir } from 'node:os';
 
 const phase = process.argv[2];
 const review = process.argv.includes('review');
@@ -32,6 +32,9 @@ const GIT = existsSync('/Library/Developer/CommandLineTools/usr/bin/git') ? '/Li
 const ANSI = new RegExp(String.fromCharCode(27) + '\\[[0-9;]*[A-Za-z]', 'g');
 const LOGS = 'reports/gate';
 mkdirSync(LOGS, { recursive: true });
+// Read before any check runs: the golden spec rewrites the tracked reports/engines.json.
+const head = spawnSync(GIT, ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
+const clean = spawnSync(GIT, ['status', '--porcelain', '--untracked-files=no'], { encoding: 'utf8' }).stdout.trim() === '';
 
 // ---------------------------------------------------------------- running checks
 
@@ -123,8 +126,7 @@ interface PwRow {
   stdout: string;
 }
 
-function playwrightRows(): PwRow[] {
-  const file = 'reports/playwright.json';
+function playwrightRows(file = 'reports/playwright.json'): PwRow[] {
   if (!existsSync(file)) return [];
   const json = JSON.parse(readFileSync(file, 'utf8')) as { suites: PwSuite[] };
   const rows: PwRow[] = [];
@@ -171,6 +173,44 @@ const pwFind = (file: RegExp, title: RegExp, project?: string): PwRow[] =>
 const pwOk = (rows: PwRow[]): boolean => rows.length > 0 && rows.every((r) => r.status === 'passed');
 const pwSummary = (rows: PwRow[]): string =>
   rows.length === 0 ? 'not run' : `${rows.filter((r) => r.status === 'passed').length} of ${rows.length} passed`;
+
+// ---------------------------------------------------------------- CI evidence
+//
+// Firefox through Playwright and the SwiftShader boot cannot be measured on this Mac
+// (ADR 0009). CI runs both on Linux and uploads reports/playwright.json, so those items
+// read it from the CI run of the exact commit being gated, and only when the working
+// tree matches that commit.
+interface CiRun {
+  databaseId: number;
+  conclusion: string;
+  headSha: string;
+  createdAt: string;
+}
+const GH = existsSync(`${homedir()}/.local/bin/gh`) ? `${homedir()}/.local/bin/gh` : 'gh';
+// Name the repository: without --repo, gh asks the git on PATH, which may not run (Xcode licence).
+const origin = spawnSync(GIT, ['remote', 'get-url', 'origin'], { encoding: 'utf8' }).stdout.trim();
+const repo = /github\.com[:/](.+?)(?:\.git)?$/.exec(origin)?.[1] ?? '';
+const ciRun: CiRun | null = (() => {
+  if (repo === '') return null;
+  const p = spawnSync(GH, ['run', 'list', '--repo', repo, '--branch', 'main', '--workflow', 'CI', '--commit', head, '--limit', '1', '--json', 'databaseId,conclusion,headSha,createdAt'], { encoding: 'utf8' });
+  return p.status === 0 ? ((JSON.parse(p.stdout) as CiRun[])[0] ?? null) : null;
+})();
+const ciPw: PwRow[] = (() => {
+  if (ciRun === null || ciRun.conclusion !== 'success' || !clean) return [];
+  const dir = `${LOGS}/ci-${ciRun.databaseId}`;
+  const file = `${dir}/reports/playwright.json`;
+  if (!existsSync(file)) spawnSync(GH, ['run', 'download', String(ciRun.databaseId), '--repo', repo, '--name', `reports-${ciRun.headSha}`, '--dir', dir], { encoding: 'utf8' });
+  return playwrightRows(file);
+})();
+const ciLabel = ciRun === null ? '' : `CI run ${ciRun.databaseId} on ${ciRun.headSha.slice(0, 7)}, Linux`;
+const ciFind = (file: RegExp, project: string): PwRow[] => ciPw.filter((r) => file.test(r.file) && r.project === project);
+const ciMissing = ciRun === null
+  ? `no CI run found for ${head.slice(0, 7)}`
+  : !clean
+    ? `the working tree differs from ${head.slice(0, 7)}, so CI evidence for that commit does not apply`
+    : ciRun.conclusion !== 'success'
+      ? `CI run ${ciRun.databaseId} on ${head.slice(0, 7)}: ${ciRun.conclusion || 'still running'}`
+      : `CI run ${ciRun.databaseId} has no Playwright report`;
 
 // ---------------------------------------------------------------- gate items
 
@@ -231,6 +271,12 @@ function item(n: number, result: Result, evidence: string[]): void {
     Firefox: pwFind(/golden\.spec/, /./, 'firefox'),
   };
   for (const [name, rows] of Object.entries(engines)) ev.push(`Playwright ${name}: ${pwSummary(rows)}`);
+  if (engines['Firefox']?.length === 0 && process.platform === 'darwin') {
+    // Firefox through Playwright does not start on this macOS (ADR 0009): take it from CI.
+    const ci = ciFind(/golden\.spec/, 'firefox');
+    if (ci.length > 0) engines['Firefox'] = ci;
+    ev.push(`Playwright Firefox from ${ci.length > 0 ? `${ciLabel}: ${pwSummary(ci)}` : `CI: ${ciMissing}`}`);
+  }
   type Native = Record<string, { matches?: boolean; finalHash?: string; ua?: string; date?: string }>;
   const native: Native = existsSync('reports/engines-native.json') ? (JSON.parse(readFileSync('reports/engines-native.json', 'utf8')) as Native) : {};
   for (const name of ['chrome', 'safari', 'firefox']) {
@@ -246,10 +292,7 @@ function item(n: number, result: Result, evidence: string[]): void {
   const nativeComplete = native['chrome']?.matches === true && native['safari']?.matches === true;
   let result: Result = 'pass';
   if (anyMismatch || !nodeOk) result = 'fail';
-  else if (!playwrightComplete || !nativeComplete) {
-    result = 'blocked';
-    if (engines['Firefox']?.length === 0 && process.platform === 'darwin') ev.push('Firefox through Playwright does not start on this macOS (ADR 0009); it runs in CI on Linux');
-  }
+  else if (!playwrightComplete || !nativeComplete) result = 'blocked';
   item(2, result, ev);
 }
 
@@ -295,7 +338,21 @@ function item(n: number, result: Result, evidence: string[]): void {
   ];
   const e2eOk = pwOk(smoke) && pwOk(loss);
   let result: Result = e2eOk ? 'pass' : 'fail';
-  if (e2eOk && !swiftshader) result = 'blocked';
+  if (e2eOk && !swiftshader) {
+    // The SwiftShader measurement comes from CI on the same commit.
+    const ciSmoke = ciFind(/smoke\.spec/, 'chromium');
+    const ciLoss = ciFind(/device-loss\.spec/, 'chromium');
+    const ciBoot = /boot (\d+) ms, backend (\w+)/.exec(ciSmoke.map((r) => r.stdout).join('\n'));
+    if (ciSmoke.length === 0) {
+      ev.push(`SwiftShader from CI: ${ciMissing}`);
+      result = 'blocked';
+    } else {
+      ev.push(
+        `SwiftShader from ${ciLabel}: smoke ${pwSummary(ciSmoke)}${ciBoot ? `, boot ${ciBoot[1]} ms on ${ciBoot[2]} against the 30 s budget` : ', no boot time logged'}; device loss ${pwSummary(ciLoss)}`,
+      );
+      result = pwOk(ciSmoke) && pwOk(ciLoss) && ciBoot !== null && Number(ciBoot[1]) <= 30_000 ? 'pass' : 'fail';
+    }
+  }
   if (e2eOk && swiftshader && boot && Number(boot[1]) > 30_000) result = 'fail';
   item(6, result, ev);
 }
@@ -313,11 +370,11 @@ function item(n: number, result: Result, evidence: string[]): void {
   if (remotes === '') {
     item(8, 'blocked', [`workflows present: ${workflows.join(', ')}`, 'no git remote: CI has never run (needs Ricky\'s answers to Q1 and Q2 in docs/PROGRESS.md)']);
   } else {
-    const gh = spawnSync('gh', ['run', 'list', '--branch', 'main', '--workflow', 'CI', '--limit', '1', '--json', 'conclusion,headSha,createdAt'], { encoding: 'utf8' });
-    const last = gh.status === 0 ? ((JSON.parse(gh.stdout) as Array<{ conclusion: string; headSha: string; createdAt: string }>)[0] ?? null) : null;
-    item(8, last === null ? 'blocked' : last.conclusion === 'success' ? 'pass' : 'fail', [
+    item(8, ciRun === null || ciRun.conclusion === '' ? 'blocked' : ciRun.conclusion === 'success' ? 'pass' : 'fail', [
       `remote: ${remotes}`,
-      last === null ? 'no CI run found (gh unavailable or no runs)' : `last CI run on main: ${last.conclusion} at ${last.createdAt} (${last.headSha.slice(0, 7)})`,
+      ciRun === null
+        ? `no CI run found on main for ${head.slice(0, 7)} (gh unavailable, or the commit is not pushed)`
+        : `CI run ${ciRun.databaseId} on main for ${ciRun.headSha.slice(0, 7)}: ${ciRun.conclusion || 'still running'} (${ciRun.createdAt})`,
       'deployment: only once Ricky approves publishing (DEPLOY_APPROVED)',
     ]);
   }
