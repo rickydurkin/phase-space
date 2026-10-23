@@ -1,6 +1,6 @@
 # P00 report - Foundations
 
-Date 21/10/2026, programme version 1.0.0, physics version 0.1.0, game version 0.0.0, commit 7821872 (with uncommitted changes).
+Date 21/10/2026, programme version 1.0.0, physics version 0.1.0, game version 0.0.0, commit 69b9db1 (with uncommitted changes).
 Machine: darwin arm64, 16 cores; load average 14.8 at the start and 14.1 at the end; run time 18.6 minutes.
 
 ## Summary

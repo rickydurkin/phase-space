@@ -6,7 +6,7 @@ Gate item 9 asks for evidence that the Claude Code setup in MASTER 13.5 works. E
 
 Live Claude Code session in the desktop app, 21/10/2026. The hook in `.claude/settings.json` runs `node tools/hooks/post-edit.js` after every Edit, Write and MultiEdit.
 
-WP0.8 scratch-branch proof: a branch `scratch/hook-proof` was created from main (commit 20d348e).
+WP0.8 scratch-branch proof: a branch `scratch/hook-proof` was created from main (commit f2a7364).
 
 1. The Edit tool added `export const HOOK_PROBE: number = 'not a number';` to src/sim/version.ts. The hook blocked with exit 2 and returned: `src/sim/version.ts(8,14): error TS2322: Type 'string' is not assignable to type 'number'.`
 2. The Write tool created src/gpu/kernels/hook-probe.wgsl containing `let x: f32 = 1u;`. The hook blocked with exit 2 and returned: `ERROR .../hook-probe.wgsl:4:7 cannot initialize 'let' of type 'f32' with value of type 'u32'` (lint-allow)

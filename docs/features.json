@@ -16,7 +16,7 @@
         "Commit"
       ],
       "passes": true,
-      "evidence": "git log: 7c9b1d2 bootstrap commit; docs/PROGRESS.md and docs/phases/P00-plan.md present"
+      "evidence": "git log: 75fab53 bootstrap commit; docs/PROGRESS.md and docs/phases/P00-plan.md present"
     },
     {
       "id": "P00-002",
@@ -257,7 +257,7 @@
         "gate tool"
       ],
       "passes": true,
-      "evidence": "npm run gate P00 on commit 7821872 (21/10/2026), 18.6 minutes: 8 of 11 items pass, 0 fail, 3 blocked; test:visual 2 passed and fails on a missing baseline (D-008); test:soak 5 minutes with heap 5.74 to 5.88 MB after warm-up and GPU counts flat (D-006); perf:mac wrote docs/BASELINE.md with budgets flagged (D-011)."
+      "evidence": "npm run gate P00 on commit 69b9db1 (21/10/2026), 18.6 minutes: 8 of 11 items pass, 0 fail, 3 blocked; test:visual 2 passed and fails on a missing baseline (D-008); test:soak 5 minutes with heap 5.74 to 5.88 MB after warm-up and GPU counts flat (D-006); perf:mac wrote docs/BASELINE.md with budgets flagged (D-011)."
     },
     {
       "id": "P00-018",

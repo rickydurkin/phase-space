@@ -17,7 +17,7 @@ Claude Code runs on Ricky's Mac (Apple M4 Max, 128 GB, macOS 27.0.1, Chrome, Saf
 
 ## Current state (end of session 2, 21/10/2026)
 
-P00 is built and reviewed. The independent gate review (docs/phases/P00-review.md) recommended fail and filed D-002 to D-010; all nine are fixed with regression tests that failed before the fix. The final gate run on commit 7821872 (docs/phases/P00-report.md): 8 of 11 items pass, 0 fail, 3 blocked. 19 of 22 features in docs/features.json pass.
+P00 is built and reviewed. The independent gate review (docs/phases/P00-review.md) recommended fail and filed D-002 to D-010; all nine are fixed with regression tests that failed before the fix. The final gate run on commit 69b9db1 (docs/phases/P00-report.md): 8 of 11 items pass, 0 fail, 3 blocked. 19 of 22 features in docs/features.json pass.
 
 The three blocked items all need the first CI run on Linux, which needs Q1 and Q2:
 
@@ -52,7 +52,7 @@ Open defect: D-011 (cube-drop frame-interval p95 9.7 ms against 8.3 ms, measured
 
 ### Session 1, 15/10/2026 to 16/10/2026
 
-- Bootstrap: repository initialised, programme/ copied in, package.json, PROGRESS.md and P00-plan.md (commit 7c9b1d2).
+- Bootstrap: repository initialised, programme/ copied in, package.json, PROGRESS.md and P00-plan.md (commit 75fab53).
 - Toolchain: TypeScript 6.0.3 (three tsconfigs; src/sim without DOM), ESLint 10 with tools/eslint/plugin-sim.js, dependency-cruiser, Vitest 5 projects, Playwright 1.64.1, Dawn (webgpu 0.6.2), content lint, count check, verify:fast under 90 s (ADR 0001).
 - Core: dmath (fdlibm and FreeBSD ports, 19 functions; million-sample run 18 of 19 within 2 ulp, tanh fixed with musl's range split and re-run), keyed RNG, FNV-1a 64, world registry with stable ids (ADR 0002), scheduler and input log, binary snapshots, replay runner, energy ledger with negative controls, frame clock, Rapier mechanics domain.
 - Tests: unit (hash, rng, world, ledger, clock, dmath, lint rules), bench M1 (0.0507% error), golden cube-drop (Node x3, stubbed worker, 30/60/120/144 Hz x 0.01/1/100x, snapshot at 300), fuzz (60 scenes), GPU kernel via Dawn under node:test (ADR 0003), e2e (golden in Chromium and WebKit, smoke, WebGL2, device loss by test API and CDP, visual baselines, 5-minute soak).
