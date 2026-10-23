@@ -43,7 +43,9 @@ test('D-001: GPU process crash through the DevTools protocol leaves no unhandled
   const c = watchConsole(page);
   await bootGame(page);
   await page.evaluate(() => (window.__ps as TestApi).pause());
-  await page.evaluate(() => (window.__ps as TestApi).step(120));
+  // A fixed tick, not wherever boot had got to: at rest the cube's lit faces cross the scanned column (D-014).
+  await page.evaluate(() => (window.__ps as TestApi).loadScene('cube-drop', 1));
+  await page.evaluate(() => (window.__ps as TestApi).step(300));
   const before = await page.evaluate(() => (window.__ps as TestApi).getState());
   const session = await browser.newBrowserCDPSession();
   await session.send('Browser.crashGpuProcess');
@@ -147,7 +149,9 @@ test('D-010: recovery retries after failed attempts and keeps exactly one canvas
   await bootGame(page);
   test.skip((await page.evaluate(() => (window.__ps as TestApi).backend())) !== 'WebGPU', 'needs a WebGPU device to lose');
   await page.evaluate(() => (window.__ps as TestApi).pause());
-  await page.evaluate(() => (window.__ps as TestApi).step(20));
+  // A fixed tick (D-014): at tick 27 on CI the tumbling cube showed only its shadowed underside to the scan.
+  await page.evaluate(() => (window.__ps as TestApi).loadScene('cube-drop', 1));
+  await page.evaluate(() => (window.__ps as TestApi).step(300));
   expect(await page.evaluate(() => (window.__ps as TestApi).crashGpu({ failRecoveries: 2 }))).toBe(true);
   // While the failed attempts run, the old canvas must stay on the page.
   for (let i = 0; i < 5; i++) {
