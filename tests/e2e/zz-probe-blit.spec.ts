@@ -32,8 +32,10 @@ async function toWebGL2(page: Page, variant: Variant): Promise<void> {
   await page.evaluate(() => (window.__ps as TestApi).step(300));
 }
 
+// Round 3 runs with the D-015 guard in src/render/renderer.ts: the hits should be gone.
+const ROUNDS: Record<Variant, number> = { read: 4, drag: 4, both: 8, idle: 0, 'webgl-boot-both': 8 };
 for (const variant of ['read', 'drag', 'both', 'idle', 'webgl-boot-both'] as const) {
-  for (let n = 0; n < 4; n++) {
+  for (let n = 0; n < ROUNDS[variant]; n++) {
     test(`probe ${variant} ${n}`, async ({ page, browserName }) => {
       test.skip(browserName !== 'chromium', 'Chromium only');
       let phase = 'boot';

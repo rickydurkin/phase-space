@@ -113,6 +113,37 @@ const WEBGL_ATTEMPTS: readonly RecoveryAttempt[] = [
 const MAX_RECOVERIES_IN_WINDOW = 2;
 const RECOVERY_WINDOW_MS = 10_000;
 
+/** three's WebGL state object, as far as guardFramebufferBindings touches it. */
+interface WebGLStateInternals {
+  readonly gl: WebGL2RenderingContext;
+  readonly currentBoundFramebuffers: Record<number, WebGLFramebuffer | null | undefined>;
+  bindFramebuffer(target: number, framebuffer: WebGLFramebuffer | null): boolean;
+}
+
+/**
+ * D-015: three 0.186's WebGLState.bindFramebuffer skips any bind its cache believes is current,
+ * but the cache records a FRAMEBUFFER bind as a draw bind only, although GL binds the read
+ * framebuffer too. The multisample resolve can then skip binding its read framebuffer and blit a
+ * framebuffer onto itself (GL_INVALID_OPERATION "Blit feedback loop" on SwiftShader in CI).
+ * Always bind, and keep the cache true to GL.
+ */
+function guardFramebufferBindings(renderer: WebGPURenderer): void {
+  const state = (renderer.backend as unknown as { state?: WebGLStateInternals }).state;
+  if (state === undefined || typeof state.bindFramebuffer !== 'function') return;
+  const { gl, currentBoundFramebuffers: bound } = state;
+  state.bindFramebuffer = (target, framebuffer) => {
+    gl.bindFramebuffer(target, framebuffer);
+    if (target === gl.FRAMEBUFFER) {
+      bound[gl.READ_FRAMEBUFFER] = framebuffer;
+      bound[gl.DRAW_FRAMEBUFFER] = framebuffer;
+    } else {
+      bound[target] = framebuffer;
+    }
+    bound[gl.FRAMEBUFFER] = bound[gl.READ_FRAMEBUFFER] === bound[gl.DRAW_FRAMEBUFFER] ? bound[gl.DRAW_FRAMEBUFFER] : undefined;
+    return true;
+  };
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -172,6 +203,7 @@ export class SceneRenderer {
     const forceWebGL = options.forceWebGL || typeof navigator.gpu === 'undefined';
     const renderer = new WebGPURenderer({ antialias: true, forceWebGL });
     await renderer.init();
+    if ((renderer.backend as unknown as BackendInternals).isWebGPUBackend !== true) guardFramebufferBindings(renderer);
     return renderer;
   }
 
