@@ -19,23 +19,27 @@ Claude Code runs on Ricky's Mac (Apple M4 Max, 128 GB, macOS 27.0.1, Chrome, Saf
 
 The public repository is https://github.com/rickydurkin/phase-space (MIT), with the history on Ricky's GitHub no-reply address. CI is green on main: run 40034825786 on commit 1db8418 passed every job, including all 21 Playwright tests on Linux with SwiftShader (Firefox, Chromium and WebKit golden replays, a 415 ms SwiftShader boot, device loss, WebGL2, visual baselines). GitHub Pages is not deployed: deploy.yml skips itself until the repository variable DEPLOY_APPROVED is "true".
 
+CI is not reliably green yet: D-015 (open) is a GL error that Chrome on CI's SwiftShader logs intermittently while the game renders through WebGL2, which fails the clean-console check of the WebGL2 fallback test in roughly one CI run in five (run 40037733859 on bd50397). Diagnosis is on branch wip/blit-probe; the error does not come from the game's own GL calls, and one fix hypothesis has been ruled out. See Q6.
+
 Getting CI green took three defects, all fixed with evidence: D-012 (the main loop's 0.1 s frame cap threw simulated time away below 10 fps), D-013 (a cube scan too slow for a software rasteriser, and a badge test that sampled during start-up) and D-014 (two device-loss tests whose scene depended on timing). The gate tool now reads the Firefox and SwiftShader evidence from the CI run of the commit being gated.
 
 The full gate (`npm run gate P00`) passed 11 of 11 items on 1db8418, 0 fail, 0 blocked; docs/phases/P00-report.md holds the latest run. 22 of 22 features in docs/features.json pass.
 
-Open defect: D-011 (cube-drop frame-interval p95 9.7 ms against 8.3 ms, measured at load average 31; needs GPU timestamps in P1 and an idle re-run).
+Open defects: D-015 (above) and D-011 (cube-drop frame-interval p95 9.7 ms against 8.3 ms, measured at load average 31; needs GPU timestamps in P1 and an idle re-run).
 
 ## Next steps (in order)
 
-1. Ricky's playtest (checklist at the end of docs/phases/P00-report.md). With Pages not approved, play the local build: `npm run dev` and open the printed address in Chrome and in Safari.
-2. Optional: ask the gate-reviewer subagent for a second review of the fixes since the first review (D-011 to D-014 and the CI evidence path in tools/gate.ts).
-3. Ricky writes "close P00"; tag v0.1.0.
-4. P1 carries: InstancedMesh and the 10,000-body spike (ADR 0007), Preact signals HUD (ADR 0008), GPU timestamp queries (D-011), the plain Rapier deterministic build with a .wasm asset to free the worker chunk's size headroom (IDEAS), adaptive snapshot ring depth (ADR 0004), remove react and zustand from devDependencies.
+1. Ricky answers Q6 (D-015); CI on main is then made reliably green.
+2. Ricky's playtest (checklist at the end of docs/phases/P00-report.md). With Pages not approved, play the local build: `npm run dev` and open the printed address in Chrome and in Safari.
+3. Optional: ask the gate-reviewer subagent for a second review of the fixes since the first review (D-011 to D-014 and the CI evidence path in tools/gate.ts).
+4. Ricky writes "close P00"; tag v0.1.0.
+5. P1 carries: InstancedMesh and the 10,000-body spike (ADR 0007), Preact signals HUD (ADR 0008), GPU timestamp queries (D-011), the plain Rapier deterministic build with a .wasm asset to free the worker chunk's size headroom (IDEAS), adaptive snapshot ring depth (ADR 0004), remove react and zustand from devDependencies.
 
 ## Open questions for Ricky
 
 - Q2b: approve GitHub Pages deployment (set the repository variable DEPLOY_APPROVED to true)? Not yet approved.
 - Q4: ADR 0008 chooses Preact signals over the MASTER default of React with Zustand on measured cost; confirm or overrule.
+- Q6: D-015. Chrome on CI's SwiftShader intermittently logs "Blit feedback loop" for WebGL2 rendering, from below the game's own GL calls. Allow that one warning in SwiftShader CI runs (a documented allowlist entry, which loosens the clean-console check there), or keep investigating first?
 - Q5: R now replays the run visibly from the start before comparing hashes (D-003). The reviewer left this to you; say if you would rather R check silently.
 
 ## Session log
@@ -45,7 +49,7 @@ Open defect: D-011 (cube-drop frame-interval p95 9.7 ms against 8.3 ms, measured
 - Ricky answered the setup questions: public repository, MIT licence, title PHASE SPACE, no Pages yet.
 - Installed the GitHub CLI (official zip, checksum verified) because Homebrew needs the Xcode licence; Ricky signed in through the device flow and approved the workflow scope.
 - Rewrote the history to the no-reply address (a backup bundle of the old history was kept outside the repository), created rickydurkin/phase-space, pushed, and ran CI.
-- The CI runs found D-012, D-013 and D-014 and the missing Linux visual baselines, which were recorded by the manual workflow and committed after review. Run 40030276231 was the first green one, run 40032370739 then failed on D-014, and run 40034825786 is green.
+- The CI runs found D-012, D-013 and D-014 and the missing Linux visual baselines, which were recorded by the manual workflow and committed after review. Run 40030276231 was the first green one, run 40032370739 then failed on D-014, run 40034825786 is green, and run 40037733859 failed on D-015, which three probe runs on wip/blit-probe then characterised.
 - tools/gate.ts reads Firefox and SwiftShader evidence from CI for the gated commit; full gate 11 of 11.
 
 ### Session 2, 20/10/2026 to 21/10/2026 (Opus 5.5)
