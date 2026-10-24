@@ -23,7 +23,7 @@ CI is not reliably green yet: D-015 (open) is a GL error that Chrome on CI's Swi
 
 Getting CI green took three defects, all fixed with evidence: D-012 (the main loop's 0.1 s frame cap threw simulated time away below 10 fps), D-013 (a cube scan too slow for a software rasteriser, and a badge test that sampled during start-up) and D-014 (two device-loss tests whose scene depended on timing). The gate tool now reads the Firefox and SwiftShader evidence from the CI run of the commit being gated.
 
-The full gate (`npm run gate P00`) passed 11 of 11 items on 1db8418, 0 fail, 0 blocked; docs/phases/P00-report.md holds the latest run. 22 of 22 features in docs/features.json pass.
+The full gate (`npm run gate P00`) passed 11 of 11 items on 1db8418 (CI run 40034825786 green). The latest run, on f57b4a4 (docs/phases/P00-report.md), has 8 pass, 0 fail and 3 blocked: items 2, 6 and 8 read CI for that exact commit, and its run 40042647008 was still installing runner packages when the gate finished. Re-run the gate once a CI run on main is green. 22 of 22 features in docs/features.json pass.
 
 Open defects: D-015 (above) and D-011 (cube-drop frame-interval p95 9.7 ms against 8.3 ms, measured at load average 31; needs GPU timestamps in P1 and an idle re-run).
 
