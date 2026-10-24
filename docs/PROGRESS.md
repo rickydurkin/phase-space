@@ -27,16 +27,17 @@ D-015 is a GL warning that Chrome on CI's SwiftShader logs intermittently while 
 
 Getting CI green took three defects, all fixed with evidence: D-012 (the main loop's 0.1 s frame cap threw simulated time away below 10 fps), D-013 (a cube scan too slow for a software rasteriser, and a badge test that sampled during start-up) and D-014 (two device-loss tests whose scene depended on timing). The gate tool now reads the Firefox and SwiftShader evidence from the CI run of the commit being gated.
 
-The full gate (`npm run gate P00`) passed 11 of 11 items on 1db8418 (CI run 40034825786 green). The latest run, on f57b4a4 (docs/phases/P00-report.md), has 8 pass, 0 fail and 3 blocked: items 2, 6 and 8 read CI for that exact commit, and its run 40042647008 was still installing runner packages when the gate finished. Re-run the gate once a CI run on main is green. 22 of 22 features in docs/features.json pass.
+The full gate (`npm run gate P00`) passed 11 of 11 items on 1db8418 (CI run 40034825786 green). The latest run, on a7c4549 with CI run 40088846985 green (docs/phases/P00-report.md), has 10 pass and 1 fail: every check in item 1 passed, but verify:fast took 311.7 s against its 90 s budget because other work on the Mac held the load average at 13 to 25 during the run; the same suite took 24.2 s straight afterwards. Re-run the gate on a quiet machine before "close P00".
 
 Open defect: D-011 (cube-drop frame-interval p95 9.7 ms against 8.3 ms, measured at load average 31; needs GPU timestamps in P1 and an idle re-run).
 
 ## Next steps (in order)
 
-1. Ricky's playtest (checklist at the end of docs/phases/P00-report.md). With Pages not approved, play the local build: `npm run dev` and open the printed address in Chrome and in Safari.
-2. Optional: ask the gate-reviewer subagent for a second review of the fixes since the first review (D-011 to D-014 and the CI evidence path in tools/gate.ts).
-3. Ricky writes "close P00"; tag v0.1.0.
-4. P1 carries: InstancedMesh and the 10,000-body spike (ADR 0007), Preact signals HUD (ADR 0008), GPU timestamp queries (D-011), the plain Rapier deterministic build with a .wasm asset to free the worker chunk's size headroom (IDEAS), adaptive snapshot ring depth (ADR 0004), remove react and zustand from devDependencies.
+1. Re-run `npm run gate P00` on a quiet machine (item 1's 90 s verify:fast budget).
+2. Ricky's playtest (checklist at the end of docs/phases/P00-report.md). With Pages not approved, play the local build: `npm run dev` and open the printed address in Chrome and in Safari.
+3. Optional: ask the gate-reviewer subagent for a second review of the fixes since the first review (D-011 to D-014 and the CI evidence path in tools/gate.ts).
+4. Ricky writes "close P00"; tag v0.1.0.
+5. P1 carries: InstancedMesh and the 10,000-body spike (ADR 0007), Preact signals HUD (ADR 0008), GPU timestamp queries (D-011), the plain Rapier deterministic build with a .wasm asset to free the worker chunk's size headroom (IDEAS), adaptive snapshot ring depth (ADR 0004), remove react and zustand from devDependencies.
 
 ## Open questions for Ricky
 
@@ -51,7 +52,7 @@ Open defect: D-011 (cube-drop frame-interval p95 9.7 ms against 8.3 ms, measured
 - Ricky answered the setup questions: public repository, MIT licence, title PHASE SPACE, no Pages yet.
 - Installed the GitHub CLI (official zip, checksum verified) because Homebrew needs the Xcode licence; Ricky signed in through the device flow and approved the workflow scope.
 - Rewrote the history to the no-reply address (a backup bundle of the old history was kept outside the repository), created rickydurkin/phase-space, pushed, and ran CI.
-- The CI runs found D-012, D-013 and D-014 and the missing Linux visual baselines, which were recorded by the manual workflow and committed after review. Run 40030276231 was the first green one, run 40032370739 then failed on D-014, run 40034825786 is green, and run 40037733859 failed on D-015, which three probe runs on wip/blit-probe then characterised.
+- The CI runs found D-012 to D-015 and the missing Linux visual baselines, which were recorded by the manual workflow and committed after review. Run 40030276231 was the first green one, run 40032370739 then failed on D-014, run 40034825786 is green, run 40037733859 failed on D-015, which three probe runs on wip/blit-probe then characterised, and after Ricky's Q6 answer run 40088846985 on a7c4549 is green.
 - tools/gate.ts reads Firefox and SwiftShader evidence from CI for the gated commit; full gate 11 of 11.
 
 ### Session 2, 20/10/2026 to 21/10/2026 (Opus 5.5)
