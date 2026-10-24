@@ -27,17 +27,16 @@ D-015 is a GL warning that Chrome on CI's SwiftShader logs intermittently while 
 
 Getting CI green took three defects, all fixed with evidence: D-012 (the main loop's 0.1 s frame cap threw simulated time away below 10 fps), D-013 (a cube scan too slow for a software rasteriser, and a badge test that sampled during start-up) and D-014 (two device-loss tests whose scene depended on timing). The gate tool now reads the Firefox and SwiftShader evidence from the CI run of the commit being gated.
 
-The full gate (`npm run gate P00`) passed 11 of 11 items on 1db8418 (CI run 40034825786 green). The latest run, on a7c4549 with CI run 40088846985 green (docs/phases/P00-report.md), has 10 pass and 1 fail: every check in item 1 passed, but verify:fast took 311.7 s against its 90 s budget because other work on the Mac held the load average at 13 to 25 during the run; the same suite took 24.2 s straight afterwards. Re-run the gate on a quiet machine before "close P00".
+The full gate (`npm run gate P00`, docs/phases/P00-report.md) passes 11 of 11 items on aa6dbff, 0 fail, 0 blocked, with CI run 40091651956 on that commit green: verify:fast 25.5 s, all 20 local Playwright tests with the 5-minute soak, Firefox golden 2 of 2 and a 397 ms SwiftShader boot from CI. An earlier run on a7c4549 failed item 1 only on the verify:fast time budget while the Mac was heavily loaded (311.7 s).
 
 Open defect: D-011 (cube-drop frame-interval p95 9.7 ms against 8.3 ms, measured at load average 31; needs GPU timestamps in P1 and an idle re-run).
 
 ## Next steps (in order)
 
-1. Re-run `npm run gate P00` on a quiet machine (item 1's 90 s verify:fast budget).
-2. Ricky's playtest (checklist at the end of docs/phases/P00-report.md). With Pages not approved, play the local build: `npm run dev` and open the printed address in Chrome and in Safari.
-3. Optional: ask the gate-reviewer subagent for a second review of the fixes since the first review (D-011 to D-014 and the CI evidence path in tools/gate.ts).
-4. Ricky writes "close P00"; tag v0.1.0.
-5. P1 carries: InstancedMesh and the 10,000-body spike (ADR 0007), Preact signals HUD (ADR 0008), GPU timestamp queries (D-011), the plain Rapier deterministic build with a .wasm asset to free the worker chunk's size headroom (IDEAS), adaptive snapshot ring depth (ADR 0004), remove react and zustand from devDependencies.
+1. Ricky's playtest (checklist at the end of docs/phases/P00-report.md). With Pages not approved, play the local build: `npm run dev` and open the printed address in Chrome and in Safari.
+2. Optional: ask the gate-reviewer subagent for a second review of the fixes since the first review (D-011 to D-014 and the CI evidence path in tools/gate.ts).
+3. Ricky writes "close P00"; tag v0.1.0.
+4. P1 carries: InstancedMesh and the 10,000-body spike (ADR 0007), Preact signals HUD (ADR 0008), GPU timestamp queries (D-011), the plain Rapier deterministic build with a .wasm asset to free the worker chunk's size headroom (IDEAS), adaptive snapshot ring depth (ADR 0004), remove react and zustand from devDependencies.
 
 ## Open questions for Ricky
 
