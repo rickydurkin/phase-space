@@ -1,6 +1,7 @@
 import { expect, type Page, type ConsoleMessage } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import type { TestApi } from '../../src/app/test-api.ts';
+import { usesRealGpu, onCi } from './adapter.ts';
 
 declare global {
   interface Window {
@@ -8,9 +9,16 @@ declare global {
   }
 }
 
-const allowlist = JSON.parse(readFileSync(new URL('../console-allowlist.json', import.meta.url), 'utf8')) as {
-  warnings: { pattern: string; reason: string }[];
-};
+interface AllowedWarning {
+  pattern: string;
+  reason: string;
+  /** "swiftshader-ci": the entry applies only to SwiftShader runs on a CI runner. */
+  only?: 'swiftshader-ci';
+}
+const swiftshaderCi = !usesRealGpu() && onCi();
+const allowlist = (
+  JSON.parse(readFileSync(new URL('../console-allowlist.json', import.meta.url), 'utf8')) as { warnings: AllowedWarning[] }
+).warnings.filter((w) => w.only === undefined || (w.only === 'swiftshader-ci' && swiftshaderCi));
 
 /** Collect console errors and non-allowlisted warnings for the whole page life. */
 export function watchConsole(page: Page): { errors: string[]; warnings: string[]; pageErrors: string[] } {
@@ -19,7 +27,7 @@ export function watchConsole(page: Page): { errors: string[]; warnings: string[]
   const pageErrors: string[] = [];
   page.on('console', (m: ConsoleMessage) => {
     if (m.type() === 'error') errors.push(m.text());
-    if (m.type() === 'warning' && !allowlist.warnings.some((w) => new RegExp(w.pattern).test(m.text()))) {
+    if (m.type() === 'warning' && !allowlist.some((w) => new RegExp(w.pattern).test(m.text()))) {
       warnings.push(m.text());
     }
   });

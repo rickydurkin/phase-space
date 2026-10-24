@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { usesRealGpu } from './tests/e2e/adapter.ts';
 
 // WebGPU in CI (Linux) through SwiftShader in the Chromium headless shell
 // (MASTER 13.3, verified on Linux in the research snapshot). On macOS every
@@ -15,9 +16,7 @@ const SWIFTSHADER = [
   '--ignore-gpu-blocklist',
 ];
 const REAL_GPU = ['--enable-unsafe-webgpu', '--ignore-gpu-blocklist'];
-const useRealGpu =
-  process.env['PS_REAL_GPU'] === '1' ||
-  (process.env['PS_SWIFTSHADER'] !== '1' && process.platform === 'darwin');
+const useRealGpu = usesRealGpu();
 const chromiumArgs = useRealGpu ? REAL_GPU : SWIFTSHADER;
 // The headless shell has no GPU process; the real GPU needs full Chromium (new headless).
 const chromiumChannel = useRealGpu ? 'chromium' : undefined;

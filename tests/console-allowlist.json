@@ -1,9 +1,14 @@
 {
-  "_comment": "Console warnings allowed in automated runs (MASTER 2.9). Errors are never allowed. Each entry needs a reason.",
+  "_comment": "Console warnings allowed in automated runs (MASTER 2.9). Errors are never allowed. Each entry needs a reason. \"only\": \"swiftshader-ci\" limits an entry to SwiftShader runs on a CI runner (tests/e2e/adapter.ts).",
   "warnings": [
     {
       "pattern": "GL Driver Message \\(OpenGL, Performance, GL_CLOSE_PATH_NV, High\\): GPU stall due to ReadPixels",
       "reason": "ANGLE performance notice raised by the test API's WebGL2 pixel readback (window.__ps.readPixels), which only exists in test builds; production builds never read pixels back."
+    },
+    {
+      "pattern": "GL_INVALID_OPERATION: glBlitFramebuffer: Blit feedback loop: the read and draw framebuffers are the same\\.",
+      "reason": "D-015, approved by Ricky on 24/10/2026 (Q6): Chrome on SwiftShader logs this intermittently while WebGL2 renders (about a third of 20 s sessions in probe runs 40038923665, 40039792494 and 40041285539 on wip/blit-probe), with or without device loss. No blitFramebuffer call from the page had equal read and draw bindings, and forcing three's framebuffer binds did not change it, so it comes from below the game's GL calls. Never seen on a real GPU; this entry applies to SwiftShader CI runs only.",
+      "only": "swiftshader-ci"
     }
   ]
 }
